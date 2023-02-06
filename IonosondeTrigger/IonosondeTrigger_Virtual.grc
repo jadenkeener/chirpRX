@@ -1,0 +1,511 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: untitled
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: testbench
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 16.0]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: freq
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: Frequency
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: 1E3
+    step: 1E3
+    stop: 10E3
+    value: 3E3
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [472, 20.0]
+    rotation: 0
+    state: true
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: 32E3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [272, 28.0]
+    rotation: 0
+    state: enabled
+- name: analog_sig_source_x_0
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: ''
+    freq: freq
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [144, 360.0]
+    rotation: 0
+    state: true
+- name: band_pass_filter_0
+  id: band_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    decim: '1'
+    gain: '1'
+    high_cutoff_freq: '6000'
+    interp: '1'
+    low_cutoff_freq: '3999'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_ccf
+    width: '500'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [760, 340.0]
+    rotation: 0
+    state: true
+- name: blocks_complex_to_mag_squared_0
+  id: blocks_complex_to_mag_squared
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1096, 424.0]
+    rotation: 0
+    state: true
+- name: blocks_throttle_0
+  id: blocks_throttle
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ignoretag: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: samp_rate
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 412.0]
+    rotation: 0
+    state: true
+- name: epy_block_1
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\" Ionosonde Trigger Block\n    By Jaden Keener, 2/5/23\n \
+      \   \n    Last updated 2/5/23 19:42\n    \n    This block records the raw SDR\
+      \ output when a strong enough input is \n    provided. This block is meant to\
+      \ be used alongside a filter. The filter \n    should bandpass the trigger frequency,\
+      \ then go to an average power block\n    which then feeds into this blocks first\
+      \ input.\n    \n    Outputs are purely debug.\n    \n    See __init__ for additional\
+      \ i/o information\n\"\"\"\n\nimport numpy as np\nimport datetime\nfrom gnuradio\
+      \ import gr\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, trigger_Power=0.5,\
+      \ samp_rate = 32E3, capture_window = 5): \n        \n        \"\"\" INPUTS/OUTPUTS:\n\
+      \                input[0]: Signal average power\n                input[1]: Raw\
+      \ data from SDR\n                \n                output[0]: debug state information\n\
+      \                output[1]: debug timer information\n            \"\"\"\n  \
+      \      gr.sync_block.__init__(\n            self,\n            name='Ionosonde\
+      \ Trigger', \n            in_sig=[np.float32, np.complex64],\n            out_sig=[np.int8,\
+      \ np.float32]\n        )\n        \n        self.trigger_Power = trigger_Power\n\
+      \        self.samp_rate = samp_rate\n        self.capture_window = capture_window\n\
+      \        # timer max is calculated as sample rate * capture window in seconds.\n\
+      \        self.timerMax = self.timer = self.samp_rate * self.capture_window\n\
+      \        self.writing = False\n       \n\n    def work(self, input_items, output_items):\n\
+      \        \n        # Check if we are writing\n        if self.writing:\n   \
+      \         # If we are and we still have time on the clock\n            if self.timer\
+      \ < self.timerMax:\n                # Then write data to file\n            \
+      \    self.file.write(input_items[1][:])\n                self.timer += len(output_items[0])\n\
+      \                output_items[0][:] = 2\n            else:\n               \
+      \ # Otherwise close the file and reset flags\n                self.file.close()\n\
+      \                self.writing = False\n                output_items[0][:] =\
+      \ 0\n        \n        # If not writing, do we have high power on trigger?\n\
+      \        elif np.any(input_items[0] > self.trigger_Power):\n            # Set\
+      \ status variables\n            self.writing = True\n            self.timer\
+      \ = 0\n            output_items[0][:] = 1\n            \n            # Open\
+      \ new file and do first write\n            self.filename = '{date:%Y%m%d_%H%M%S}.chirp'.format(date=datetime.datetime.now())\n\
+      \            self.file = open(self.filename, \"ab\")\n            self.file.write(input_items[1][:])\n\
+      \        # Show debug state of none\n        else:\n            output_items[0][:]\
+      \ = 0\n        \n        # For debugging timer\n        output_items[1][:] =\
+      \ self.timer\n        \n        # gnuradio needs this return\n        return\
+      \ len(output_items[0])\n"
+    affinity: ''
+    alias: ''
+    capture_window: '5'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    trigger_Power: '0.5'
+  states:
+    _io_cache: '(''Ionosonde Trigger'', ''blk'', [(''trigger_Power'', ''0.5''), (''samp_rate'',
+      ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'', 1), (''1'',
+      ''complex'', 1)], [(''0'', ''byte'', 1), (''1'', ''float'', 1)], '' INPUTS/OUTPUTS:\n                input[0]:
+      Signal average power\n                input[1]: Raw data from SDR\n                \n                output[0]:
+      debug state information\n                output[1]: debug timer information\n            '',
+      [''capture_window'', ''samp_rate'', ''trigger_Power''])'
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1288, 644.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_number_sink_0
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_HORIZ
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '2'
+    min: '-1'
+    name: '"Power"'
+    nconnections: '1'
+    type: float
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1432, 380.0]
+    rotation: 0
+    state: true
+- name: qtgui_number_sink_1
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_HORIZ
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '3'
+    min: '-1'
+    name: '"TrigOut"'
+    nconnections: '1'
+    type: byte
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1672, 628.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_number_sink_1_1
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_HORIZ
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: 200E3
+    min: '0'
+    name: '"Timer"'
+    nconnections: '1'
+    type: float
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1680, 780.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: Signal 1
+    label10: Signal 10
+    label2: Signal 2
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Raw"'
+    nconnections: '1'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [744, 1068.0]
+    rotation: 0
+    state: true
+
+connections:
+- [analog_sig_source_x_0, '0', blocks_throttle_0, '0']
+- [band_pass_filter_0, '0', blocks_complex_to_mag_squared_0, '0']
+- [blocks_complex_to_mag_squared_0, '0', epy_block_1, '0']
+- [blocks_complex_to_mag_squared_0, '0', qtgui_number_sink_0, '0']
+- [blocks_throttle_0, '0', band_pass_filter_0, '0']
+- [blocks_throttle_0, '0', epy_block_1, '1']
+- [blocks_throttle_0, '0', qtgui_time_sink_x_0, '0']
+- [epy_block_1, '0', qtgui_number_sink_1, '0']
+- [epy_block_1, '1', qtgui_number_sink_1_1, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.5.0
