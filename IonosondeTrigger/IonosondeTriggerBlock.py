@@ -27,7 +27,7 @@ class blk(gr.sync_block):
                 
                 output[0]: debug state information
                 output[1]: debug timer information
-            """
+        """
         gr.sync_block.__init__(
             self,
             name='Ionosonde Trigger', 
