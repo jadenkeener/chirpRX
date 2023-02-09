@@ -16,6 +16,7 @@
 import numpy as np
 import datetime
 from gnuradio import gr
+import shutil # For moving files, functional across disks
 
 class blk(gr.sync_block):  
 
@@ -58,6 +59,8 @@ class blk(gr.sync_block):
                 self.file.close()
                 self.writing = False
                 output_items[0][:] = 0
+                # Move to HDD
+                self.shutil.move( self.filename, "/media/chirp/Longterm/{self.filename}.chirp")
         
         # If not writing, do we have high power on trigger?
         elif np.any(input_items[0] > self.trigger_Power):
