@@ -1,7 +1,7 @@
 """ Ionosonde Trigger Block
     By Jaden Keener, 2/5/23
     
-    Last updated 2/5/23 19:42
+    Last updated 2/9/23 by klukes
     
     This block records the raw SDR output when a strong enough input is 
     provided. This block is meant to be used alongside a filter. The filter 
