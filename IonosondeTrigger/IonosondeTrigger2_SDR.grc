@@ -191,22 +191,24 @@ blocks:
   id: epy_block
   parameters:
     _source_code: "\"\"\" Ionosonde Trigger Block\n    By Jaden Keener, 2/5/23\n \
-      \   \n    Last updated 2/5/23 19:42\n    \n    This block records the raw SDR\
-      \ output when a strong enough input is \n    provided. This block is meant to\
-      \ be used alongside a filter. The filter \n    should bandpass the trigger frequency,\
-      \ then go to an average power block\n    which then feeds into this blocks first\
-      \ input.\n    \n    Outputs are purely debug.\n    \n    See __init__ for additional\
+      \   \n    Last updated 2/12/23 2:41\n    - Added moving average functionality.\
+      \ Now we shouldn't have to manually set\n      trigger threshold\n    - TRYING\
+      \ TO FIX WINODW\n    \n    This block records the raw SDR output when a strong\
+      \ enough input is \n    provided. This block is meant to be used alongside a\
+      \ filter. The filter \n    should bandpass the trigger frequency, then go to\
+      \ an average power block\n    which then feeds into this blocks first input.\n\
+      \    \n    Outputs are purely debug.\n    \n    See __init__ for additional\
       \ i/o information\n\"\"\"\n\nimport numpy as np\nimport datetime\nfrom gnuradio\
-      \ import gr\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, trigger_delta_dB=1,\
+      \ import gr\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, trigger_delta_dB=5,\
       \ samp_rate = 32E3, capture_window = 5): \n        \n        \"\"\" INPUTS/OUTPUTS:\n\
       \                input[0]: Signal average power\n                input[1]: Raw\
       \ data from SDR\n                input[2]: Moving average of [0]\n         \
       \       \n                output[0]: debug state information\n             \
       \   output[1]: debug timer information\n            \"\"\"\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='Ionosonde Trigger', \n            in_sig=[np.float32,\
-      \ np.complex64, np.float32],\n            out_sig=[np.float32, np.float32]\n\
-      \        )\n        \n        self.trigger_Power = trigger_delta_dB\n      \
-      \  self.samp_rate = samp_rate\n        self.capture_window = capture_window\n\
+      \            self,\n            name='Ionosonde Trigger 2.0', \n           \
+      \ in_sig=[np.float32, np.complex64, np.float32],\n            out_sig=[np.float32,\
+      \ np.float32]\n        )\n        \n        self.trigger_Power = trigger_delta_dB\n\
+      \        self.samp_rate = samp_rate\n        self.capture_window = capture_window\n\
       \        # timer max is calculated as sample rate * capture window in seconds.\n\
       \        self.timerMax = self.timer = self.samp_rate * self.capture_window\n\
       \        self.writing = False\n       \n\n    def work(self, input_items, output_items):\n\
@@ -214,7 +216,7 @@ blocks:
       \ if we are writing\n        if self.writing:\n            # If we are and we\
       \ still have time on the clock\n            if self.timer < self.timerMax:\n\
       \                # Then write data to file\n                self.file.write(input_items[1][:])\n\
-      \                self.timer += len(output_items[0])\n                output_items[0][:]\
+      \                self.timer += len(input_items[1])\n                output_items[0][:]\
       \ = 2\n            else:\n                # Otherwise close the file and reset\
       \ flags\n                self.file.close()\n                self.writing = False\n\
       \                output_items[0][:] = 0\n        \n        # If not writing,\
@@ -237,12 +239,13 @@ blocks:
     samp_rate: samp_rate
     trigger_delta_dB: '5'
   states:
-    _io_cache: '(''Ionosonde Trigger'', ''blk'', [(''trigger_delta_dB'', ''1''), (''samp_rate'',
-      ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'', 1), (''1'',
-      ''complex'', 1), (''2'', ''float'', 1)], [(''0'', ''float'', 1), (''1'', ''float'',
-      1)], '' INPUTS/OUTPUTS:\n                input[0]: Signal average power\n                input[1]:
-      Raw data from SDR\n                input[2]: Moving average of [0]\n                \n                output[0]:
-      debug state information\n                output[1]: debug timer information\n            '',
+    _io_cache: '(''Ionosonde Trigger 2.0'', ''blk'', [(''trigger_delta_dB'', ''5''),
+      (''samp_rate'', ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'',
+      1), (''1'', ''complex'', 1), (''2'', ''float'', 1)], [(''0'', ''float'', 1),
+      (''1'', ''float'', 1)], '' INPUTS/OUTPUTS:\n                input[0]: Signal
+      average power\n                input[1]: Raw data from SDR\n                input[2]:
+      Moving average of [0]\n                \n                output[0]: debug state
+      information\n                output[1]: debug timer information\n            '',
       [''capture_window'', ''samp_rate''])'
     bus_sink: false
     bus_source: false
