@@ -54,6 +54,27 @@ blocks:
     coordinate: [432, 16.0]
     rotation: 0
     state: true
+- name: movavg_length
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: Moving Average Length
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '1000'
+    step: '1'
+    stop: '16383'
+    value: '10000'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [632, 16.0]
+    rotation: 0
+    state: true
 - name: samp_rate
   id: variable
   parameters:
@@ -135,11 +156,11 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    length: '1000'
+    length: movavg_length
     max_iter: '4000'
     maxoutbuf: '0'
     minoutbuf: '0'
-    scale: 1E-3
+    scale: 1/movavg_length
     type: float
     vlen: '1'
   states:
@@ -190,19 +211,21 @@ blocks:
   id: epy_block
   parameters:
     _source_code: "\"\"\" Ionosonde Trigger Block\n    By Jaden Keener, 2/5/23\n \
-      \   \n    Last updated 2/5/23 19:42\n    \n    This block records the raw SDR\
-      \ output when a strong enough input is \n    provided. This block is meant to\
-      \ be used alongside a filter. The filter \n    should bandpass the trigger frequency,\
-      \ then go to an average power block\n    which then feeds into this blocks first\
-      \ input.\n    \n    Outputs are purely debug.\n    \n    See __init__ for additional\
-      \ i/o information\n\"\"\"\n\nimport numpy as np\nimport datetime\nfrom gnuradio\
-      \ import gr\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, trigger_delta_dB=1,\
-      \ samp_rate = 32E3, capture_window = 5): \n        \n        \"\"\" INPUTS/OUTPUTS:\n\
-      \                input[0]: Signal average power\n                input[1]: Raw\
-      \ data from SDR\n                input[2]: Moving average of [0]\n         \
-      \       \n                output[0]: debug state information\n             \
-      \   output[1]: debug timer information\n            \"\"\"\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='Ionosonde Trigger', \n            in_sig=[np.float32,\
+      \   \n    Last updated 2/12/23 12:55\n    - Added moving average functionality.\
+      \ Now we shouldn't have to manually set\n      trigger threshold\n    \n   \
+      \ This block records the raw SDR output when a strong enough input is \n   \
+      \ provided. This block is meant to be used alongside a filter. The filter \n\
+      \    should bandpass the trigger frequency, then go to an average power block\n\
+      \    which then feeds into this blocks first input.\n    \n    Outputs are purely\
+      \ debug.\n    \n    See __init__ for additional i/o information\n\"\"\"\n\n\
+      import numpy as np\nimport datetime\nfrom gnuradio import gr\n\nclass blk(gr.sync_block):\
+      \  \n\n    def __init__(self, trigger_delta_dB=5, samp_rate = 32E3, capture_window\
+      \ = 5): \n        \n        \"\"\" INPUTS/OUTPUTS:\n                input[0]:\
+      \ Signal average power\n                input[1]: Raw data from SDR\n      \
+      \          input[2]: Moving average of [0]\n                \n             \
+      \   output[0]: debug state information\n                output[1]: debug timer\
+      \ information\n            \"\"\"\n        gr.sync_block.__init__(\n       \
+      \     self,\n            name='Ionosonde Trigger 2.0', \n            in_sig=[np.float32,\
       \ np.complex64, np.float32],\n            out_sig=[np.float32, np.float32]\n\
       \        )\n        \n        self.trigger_Power = trigger_delta_dB\n      \
       \  self.samp_rate = samp_rate\n        self.capture_window = capture_window\n\
@@ -213,7 +236,7 @@ blocks:
       \ if we are writing\n        if self.writing:\n            # If we are and we\
       \ still have time on the clock\n            if self.timer < self.timerMax:\n\
       \                # Then write data to file\n                self.file.write(input_items[1][:])\n\
-      \                self.timer += len(output_items[0])\n                output_items[0][:]\
+      \                self.timer += len(input_items[1])\n                output_items[0][:]\
       \ = 2\n            else:\n                # Otherwise close the file and reset\
       \ flags\n                self.file.close()\n                self.writing = False\n\
       \                output_items[0][:] = 0\n        \n        # If not writing,\
@@ -236,12 +259,13 @@ blocks:
     samp_rate: samp_rate
     trigger_delta_dB: '1'
   states:
-    _io_cache: '(''Ionosonde Trigger'', ''blk'', [(''trigger_delta_dB'', ''1''), (''samp_rate'',
-      ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'', 1), (''1'',
-      ''complex'', 1), (''2'', ''float'', 1)], [(''0'', ''float'', 1), (''1'', ''float'',
-      1)], '' INPUTS/OUTPUTS:\n                input[0]: Signal average power\n                input[1]:
-      Raw data from SDR\n                input[2]: Moving average of [0]\n                \n                output[0]:
-      debug state information\n                output[1]: debug timer information\n            '',
+    _io_cache: '(''Ionosonde Trigger 2.0'', ''blk'', [(''trigger_delta_dB'', ''5''),
+      (''samp_rate'', ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'',
+      1), (''1'', ''complex'', 1), (''2'', ''float'', 1)], [(''0'', ''float'', 1),
+      (''1'', ''float'', 1)], '' INPUTS/OUTPUTS:\n                input[0]: Signal
+      average power\n                input[1]: Raw data from SDR\n                input[2]:
+      Moving average of [0]\n                \n                output[0]: debug state
+      information\n                output[1]: debug timer information\n            '',
       [''capture_window'', ''samp_rate''])'
     bus_sink: false
     bus_source: false

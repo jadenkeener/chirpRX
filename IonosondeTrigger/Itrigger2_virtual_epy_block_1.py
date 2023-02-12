@@ -1,7 +1,9 @@
 """ Ionosonde Trigger Block
     By Jaden Keener, 2/5/23
     
-    Last updated 2/5/23 19:42
+    Last updated 2/12/23 12:55
+    - Added moving average functionality. Now we shouldn't have to manually set
+      trigger threshold
     
     This block records the raw SDR output when a strong enough input is 
     provided. This block is meant to be used alongside a filter. The filter 
@@ -19,7 +21,7 @@ from gnuradio import gr
 
 class blk(gr.sync_block):  
 
-    def __init__(self, trigger_delta_dB=1, samp_rate = 32E3, capture_window = 5): 
+    def __init__(self, trigger_delta_dB=5, samp_rate = 32E3, capture_window = 5): 
         
         """ INPUTS/OUTPUTS:
                 input[0]: Signal average power
@@ -31,7 +33,7 @@ class blk(gr.sync_block):
             """
         gr.sync_block.__init__(
             self,
-            name='Ionosonde Trigger', 
+            name='Ionosonde Trigger 2.0', 
             in_sig=[np.float32, np.complex64, np.float32],
             out_sig=[np.float32, np.float32]
         )
@@ -54,7 +56,7 @@ class blk(gr.sync_block):
             if self.timer < self.timerMax:
                 # Then write data to file
                 self.file.write(input_items[1][:])
-                self.timer += len(output_items[0])
+                self.timer += len(input_items[1])
                 output_items[0][:] = 2
             else:
                 # Otherwise close the file and reset flags

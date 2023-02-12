@@ -79,11 +79,15 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         # Variables
         ##################################################
         self.samp_rate = samp_rate = 32E3
+        self.movavg_length = movavg_length = 10000
         self.freq = freq = 3E3
 
         ##################################################
         # Blocks
         ##################################################
+        self._movavg_length_range = Range(1000, 16383, 1, 10000, 200)
+        self._movavg_length_win = RangeWidget(self._movavg_length_range, self.set_movavg_length, "Moving Average Length", "counter_slider", float, QtCore.Qt.Horizontal)
+        self.top_layout.addWidget(self._movavg_length_win)
         self._freq_range = Range(1E3, 10E3, 1E3, 3E3, 200)
         self._freq_win = RangeWidget(self._freq_range, self.set_freq, "Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._freq_win)
@@ -273,7 +277,7 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.epy_block_1 = epy_block_1.blk(trigger_delta_dB=1, samp_rate=samp_rate, capture_window=5)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_nlog10_ff_0 = blocks.nlog10_ff(10, 1, 0)
-        self.blocks_moving_average_xx_0 = blocks.moving_average_ff(1000, (1E-3), 4000, 1)
+        self.blocks_moving_average_xx_0 = blocks.moving_average_ff(movavg_length, (1/movavg_length), 4000, 1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.band_pass_filter_0 = filter.fir_filter_ccf(
             1,
@@ -324,6 +328,13 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.blocks_throttle_0.set_sample_rate(self.samp_rate)
         self.epy_block_1.samp_rate = self.samp_rate
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
+
+    def get_movavg_length(self):
+        return self.movavg_length
+
+    def set_movavg_length(self, movavg_length):
+        self.movavg_length = movavg_length
+        self.blocks_moving_average_xx_0.set_length_and_scale(self.movavg_length, (1/self.movavg_length))
 
     def get_freq(self):
         return self.freq

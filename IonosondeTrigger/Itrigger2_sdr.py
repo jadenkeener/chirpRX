@@ -81,11 +81,15 @@ class Itrigger2_sdr(gr.top_block, Qt.QWidget):
         ##################################################
         self.trig_freq = trig_freq = 11E6
         self.samp_rate = samp_rate = 25E6
+        self.movavg_length = movavg_length = 10000
         self.filter_width = filter_width = 10E3
 
         ##################################################
         # Blocks
         ##################################################
+        self._movavg_length_range = Range(1000, 16383, 1, 10000, 200)
+        self._movavg_length_win = RangeWidget(self._movavg_length_range, self.set_movavg_length, "Moving Average Length", "counter_slider", float, QtCore.Qt.Horizontal)
+        self.top_layout.addWidget(self._movavg_length_win)
         self.uhd_usrp_source_0 = uhd.usrp_source(
             ",".join(("", '')),
             uhd.stream_args(
@@ -111,57 +115,41 @@ class Itrigger2_sdr(gr.top_block, Qt.QWidget):
         self._trig_freq_range = Range(8E6, 15E6, 100E3, 11E6, 200)
         self._trig_freq_win = RangeWidget(self._trig_freq_range, self.set_trig_freq, "Trigger Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._trig_freq_win)
-        self.qtgui_time_sink_x_0 = qtgui.time_sink_c(
+        self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
             1024, #size
-            samp_rate, #samp_rate
-            "Raw", #name
+            window.WIN_BLACKMAN_hARRIS, #wintype
+            17.5E6, #fc
+            samp_rate, #bw
+            "", #name
             1, #number of inputs
             None # parent
         )
-        self.qtgui_time_sink_x_0.set_update_time(0.10)
-        self.qtgui_time_sink_x_0.set_y_axis(-1, 1)
-
-        self.qtgui_time_sink_x_0.set_y_label('Amplitude', "")
-
-        self.qtgui_time_sink_x_0.enable_tags(True)
-        self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, 0, "")
-        self.qtgui_time_sink_x_0.enable_autoscale(False)
-        self.qtgui_time_sink_x_0.enable_grid(False)
-        self.qtgui_time_sink_x_0.enable_axis_labels(True)
-        self.qtgui_time_sink_x_0.enable_control_panel(False)
-        self.qtgui_time_sink_x_0.enable_stem_plot(False)
+        self.qtgui_waterfall_sink_x_0.set_update_time(0.10)
+        self.qtgui_waterfall_sink_x_0.enable_grid(False)
+        self.qtgui_waterfall_sink_x_0.enable_axis_labels(True)
 
 
-        labels = ['Signal 1', 'Signal 2', 'Signal 3', 'Signal 4', 'Signal 5',
-            'Signal 6', 'Signal 7', 'Signal 8', 'Signal 9', 'Signal 10']
-        widths = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-        colors = ['blue', 'red', 'green', 'black', 'cyan',
-            'magenta', 'yellow', 'dark red', 'dark green', 'dark blue']
+
+        labels = ['', '', '', '', '',
+                  '', '', '', '', '']
+        colors = [0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0]
         alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-            1.0, 1.0, 1.0, 1.0, 1.0]
-        styles = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-        markers = [-1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1]
+                  1.0, 1.0, 1.0, 1.0, 1.0]
 
-
-        for i in range(2):
+        for i in range(1):
             if len(labels[i]) == 0:
-                if (i % 2 == 0):
-                    self.qtgui_time_sink_x_0.set_line_label(i, "Re{{Data {0}}}".format(i/2))
-                else:
-                    self.qtgui_time_sink_x_0.set_line_label(i, "Im{{Data {0}}}".format(i/2))
+                self.qtgui_waterfall_sink_x_0.set_line_label(i, "Data {0}".format(i))
             else:
-                self.qtgui_time_sink_x_0.set_line_label(i, labels[i])
-            self.qtgui_time_sink_x_0.set_line_width(i, widths[i])
-            self.qtgui_time_sink_x_0.set_line_color(i, colors[i])
-            self.qtgui_time_sink_x_0.set_line_style(i, styles[i])
-            self.qtgui_time_sink_x_0.set_line_marker(i, markers[i])
-            self.qtgui_time_sink_x_0.set_line_alpha(i, alphas[i])
+                self.qtgui_waterfall_sink_x_0.set_line_label(i, labels[i])
+            self.qtgui_waterfall_sink_x_0.set_color_map(i, colors[i])
+            self.qtgui_waterfall_sink_x_0.set_line_alpha(i, alphas[i])
 
-        self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.qwidget(), Qt.QWidget)
-        self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
+        self.qtgui_waterfall_sink_x_0.set_intensity_range(-100, 0)
+
+        self._qtgui_waterfall_sink_x_0_win = sip.wrapinstance(self.qtgui_waterfall_sink_x_0.qwidget(), Qt.QWidget)
+
+        self.top_layout.addWidget(self._qtgui_waterfall_sink_x_0_win)
         self.qtgui_number_sink_2 = qtgui.number_sink(
             gr.sizeof_float,
             0,
@@ -297,9 +285,9 @@ class Itrigger2_sdr(gr.top_block, Qt.QWidget):
         self._filter_width_range = Range(500, 100E3, 500, 10E3, 200)
         self._filter_width_win = RangeWidget(self._filter_width_range, self.set_filter_width, "Filter Width", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._filter_width_win)
-        self.epy_block_1 = epy_block_1.blk(trigger_delta_dB=1, samp_rate=samp_rate, capture_window=90)
+        self.epy_block_1 = epy_block_1.blk(trigger_delta_dB=5, samp_rate=samp_rate, capture_window=5)
         self.blocks_nlog10_ff_0 = blocks.nlog10_ff(10, 1, 0)
-        self.blocks_moving_average_xx_0 = blocks.moving_average_ff(10000000, (10E-6), 4000, 1)
+        self.blocks_moving_average_xx_0 = blocks.moving_average_ff(movavg_length, (1/movavg_length), 4000, 1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.band_pass_filter_0 = filter.fir_filter_ccf(
             1,
@@ -327,7 +315,7 @@ class Itrigger2_sdr(gr.top_block, Qt.QWidget):
         self.connect((self.epy_block_1, 1), (self.qtgui_number_sink_1_1, 0))
         self.connect((self.uhd_usrp_source_0, 0), (self.band_pass_filter_0, 0))
         self.connect((self.uhd_usrp_source_0, 0), (self.epy_block_1, 1))
-        self.connect((self.uhd_usrp_source_0, 0), (self.qtgui_time_sink_x_0, 0))
+        self.connect((self.uhd_usrp_source_0, 0), (self.qtgui_waterfall_sink_x_0, 0))
 
 
     def closeEvent(self, event):
@@ -351,9 +339,16 @@ class Itrigger2_sdr(gr.top_block, Qt.QWidget):
         self.samp_rate = samp_rate
         self.band_pass_filter_0.set_taps(firdes.band_pass(1, self.samp_rate, 3999, 6000, 500, window.WIN_HAMMING, 6.76))
         self.epy_block_1.samp_rate = self.samp_rate
-        self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
+        self.qtgui_waterfall_sink_x_0.set_frequency_range(17.5E6, self.samp_rate)
         self.uhd_usrp_source_0.set_samp_rate(self.samp_rate)
         self.uhd_usrp_source_0.set_bandwidth(self.samp_rate, 0)
+
+    def get_movavg_length(self):
+        return self.movavg_length
+
+    def set_movavg_length(self, movavg_length):
+        self.movavg_length = movavg_length
+        self.blocks_moving_average_xx_0.set_length_and_scale(self.movavg_length, (1/self.movavg_length))
 
     def get_filter_width(self):
         return self.filter_width
