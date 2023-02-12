@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: testbench
+# Title: Trigger SDR
 # GNU Radio version: 3.10.5.0
 
 from packaging.version import Version as StrictVersion
@@ -24,7 +24,6 @@ from PyQt5 import Qt
 from gnuradio import qtgui
 from gnuradio.filter import firdes
 import sip
-from gnuradio import analog
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import gr
@@ -34,20 +33,22 @@ import signal
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
+from gnuradio import uhd
+import time
 from gnuradio.qtgui import Range, RangeWidget
 from PyQt5 import QtCore
-import Itrigger_virtual_epy_block_1 as epy_block_1  # embedded python block
+import Itrigger2_sdr_epy_block_1 as epy_block_1  # embedded python block
 
 
 
 from gnuradio import qtgui
 
-class Itrigger_virtual(gr.top_block, Qt.QWidget):
+class Itrigger2_sdr(gr.top_block, Qt.QWidget):
 
     def __init__(self):
-        gr.top_block.__init__(self, "testbench", catch_exceptions=True)
+        gr.top_block.__init__(self, "Trigger SDR", catch_exceptions=True)
         Qt.QWidget.__init__(self)
-        self.setWindowTitle("testbench")
+        self.setWindowTitle("Trigger SDR")
         qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
@@ -65,7 +66,7 @@ class Itrigger_virtual(gr.top_block, Qt.QWidget):
         self.top_grid_layout = Qt.QGridLayout()
         self.top_layout.addLayout(self.top_grid_layout)
 
-        self.settings = Qt.QSettings("GNU Radio", "Itrigger_virtual")
+        self.settings = Qt.QSettings("GNU Radio", "Itrigger2_sdr")
 
         try:
             if StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
@@ -78,15 +79,38 @@ class Itrigger_virtual(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.samp_rate = samp_rate = 32E3
-        self.freq = freq = 3E3
+        self.trig_freq = trig_freq = 11E6
+        self.samp_rate = samp_rate = 25E6
+        self.filter_width = filter_width = 10E3
 
         ##################################################
         # Blocks
         ##################################################
-        self._freq_range = Range(1E3, 10E3, 1E3, 3E3, 200)
-        self._freq_win = RangeWidget(self._freq_range, self.set_freq, "Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
-        self.top_layout.addWidget(self._freq_win)
+        self.uhd_usrp_source_0 = uhd.usrp_source(
+            ",".join(("", '')),
+            uhd.stream_args(
+                cpu_format="fc32",
+                args='',
+                channels=list(range(0,1)),
+            ),
+        )
+        self.uhd_usrp_source_0.set_clock_source('gpsdo', 0)
+        self.uhd_usrp_source_0.set_time_source('gpsdo', 0)
+        self.uhd_usrp_source_0.set_samp_rate(samp_rate)
+        # Set the time to GPS time on next PPS
+        # get_mboard_sensor("gps_time") returns just after the PPS edge,
+        # thus add one second and set the time on the next PPS
+        self.uhd_usrp_source_0.set_time_next_pps(uhd.time_spec(self.uhd_usrp_source_0.get_mboard_sensor("gps_time").to_int() + 1.0))
+        # Sleep 1 second to ensure next PPS has come
+        time.sleep(1)
+
+        self.uhd_usrp_source_0.set_center_freq(17.5E6, 0)
+        self.uhd_usrp_source_0.set_antenna('B', 0)
+        self.uhd_usrp_source_0.set_bandwidth(samp_rate, 0)
+        self.uhd_usrp_source_0.set_gain(50, 0)
+        self._trig_freq_range = Range(8E6, 15E6, 100E3, 11E6, 200)
+        self._trig_freq_win = RangeWidget(self._trig_freq_range, self.set_trig_freq, "Trigger Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
+        self.top_layout.addWidget(self._trig_freq_win)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_c(
             1024, #size
             samp_rate, #samp_rate
@@ -270,10 +294,12 @@ class Itrigger_virtual(gr.top_block, Qt.QWidget):
         self.qtgui_number_sink_0.enable_autoscale(False)
         self._qtgui_number_sink_0_win = sip.wrapinstance(self.qtgui_number_sink_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_number_sink_0_win)
-        self.epy_block_1 = epy_block_1.blk(trigger_delta_dB=1, samp_rate=samp_rate, capture_window=5)
-        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
+        self._filter_width_range = Range(500, 100E3, 500, 10E3, 200)
+        self._filter_width_win = RangeWidget(self._filter_width_range, self.set_filter_width, "Filter Width", "counter_slider", float, QtCore.Qt.Horizontal)
+        self.top_layout.addWidget(self._filter_width_win)
+        self.epy_block_1 = epy_block_1.blk(trigger_delta_dB=1, samp_rate=samp_rate, capture_window=90)
         self.blocks_nlog10_ff_0 = blocks.nlog10_ff(10, 1, 0)
-        self.blocks_moving_average_xx_0 = blocks.moving_average_ff(1000, (1E-3), 4000, 1)
+        self.blocks_moving_average_xx_0 = blocks.moving_average_ff(10000000, (10E-6), 4000, 1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.band_pass_filter_0 = filter.fir_filter_ccf(
             1,
@@ -285,13 +311,11 @@ class Itrigger_virtual(gr.top_block, Qt.QWidget):
                 500,
                 window.WIN_HAMMING,
                 6.76))
-        self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, freq, 1, 0, 0)
 
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_throttle_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_complex_to_mag_squared_0, 0))
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.blocks_nlog10_ff_0, 0))
         self.connect((self.blocks_moving_average_xx_0, 0), (self.epy_block_1, 2))
@@ -299,43 +323,48 @@ class Itrigger_virtual(gr.top_block, Qt.QWidget):
         self.connect((self.blocks_nlog10_ff_0, 0), (self.blocks_moving_average_xx_0, 0))
         self.connect((self.blocks_nlog10_ff_0, 0), (self.epy_block_1, 0))
         self.connect((self.blocks_nlog10_ff_0, 0), (self.qtgui_number_sink_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.band_pass_filter_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.epy_block_1, 1))
-        self.connect((self.blocks_throttle_0, 0), (self.qtgui_time_sink_x_0, 0))
         self.connect((self.epy_block_1, 0), (self.qtgui_number_sink_1, 0))
         self.connect((self.epy_block_1, 1), (self.qtgui_number_sink_1_1, 0))
+        self.connect((self.uhd_usrp_source_0, 0), (self.band_pass_filter_0, 0))
+        self.connect((self.uhd_usrp_source_0, 0), (self.epy_block_1, 1))
+        self.connect((self.uhd_usrp_source_0, 0), (self.qtgui_time_sink_x_0, 0))
 
 
     def closeEvent(self, event):
-        self.settings = Qt.QSettings("GNU Radio", "Itrigger_virtual")
+        self.settings = Qt.QSettings("GNU Radio", "Itrigger2_sdr")
         self.settings.setValue("geometry", self.saveGeometry())
         self.stop()
         self.wait()
 
         event.accept()
 
+    def get_trig_freq(self):
+        return self.trig_freq
+
+    def set_trig_freq(self, trig_freq):
+        self.trig_freq = trig_freq
+
     def get_samp_rate(self):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-        self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
         self.band_pass_filter_0.set_taps(firdes.band_pass(1, self.samp_rate, 3999, 6000, 500, window.WIN_HAMMING, 6.76))
-        self.blocks_throttle_0.set_sample_rate(self.samp_rate)
         self.epy_block_1.samp_rate = self.samp_rate
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
+        self.uhd_usrp_source_0.set_samp_rate(self.samp_rate)
+        self.uhd_usrp_source_0.set_bandwidth(self.samp_rate, 0)
 
-    def get_freq(self):
-        return self.freq
+    def get_filter_width(self):
+        return self.filter_width
 
-    def set_freq(self, freq):
-        self.freq = freq
-        self.analog_sig_source_x_0.set_frequency(self.freq)
-
+    def set_filter_width(self, filter_width):
+        self.filter_width = filter_width
 
 
 
-def main(top_block_cls=Itrigger_virtual, options=None):
+
+def main(top_block_cls=Itrigger2_sdr, options=None):
 
     if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
         style = gr.prefs().get_string('qtgui', 'style', 'raster')
