@@ -1,9 +1,7 @@
 """ Ionosonde Trigger Block
     By Jaden Keener, 2/5/23
     
-    Last updated 2/12/23 12:55
-    - Added moving average functionality. Now we shouldn't have to manually set
-      trigger threshold
+    Last updated 2/5/23 19:42
     
     This block records the raw SDR output when a strong enough input is 
     provided. This block is meant to be used alongside a filter. The filter 
