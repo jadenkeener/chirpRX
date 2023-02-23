@@ -99,6 +99,23 @@ blocks:
     coordinate: [272, 28.0]
     rotation: 0
     state: enabled
+- name: analog_const_source_x_0
+  id: analog_const_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '10'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [32, 700.0]
+    rotation: 0
+    state: disabled
 - name: analog_sig_source_x_0
   id: analog_sig_source_x
   parameters:
@@ -209,7 +226,7 @@ blocks:
     bus_structure: null
     coordinate: [2728, 792.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: blocks_stream_to_vector_0
   id: blocks_stream_to_vector
   parameters:
@@ -247,6 +264,25 @@ blocks:
     coordinate: [392, 300.0]
     rotation: 0
     state: enabled
+- name: blocks_throttle_1
+  id: blocks_throttle
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ignoretag: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: 32e3
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [224, 852.0]
+    rotation: 0
+    state: disabled
 - name: epy_block_0
   id: epy_block
   parameters:
@@ -255,14 +291,14 @@ blocks:
       \ GRC will instantiate the first class it finds\nto get ports and parameters\
       \ of your block. The arguments to __init__  will\nbe the parameters. All of\
       \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      import math\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):  # other\
+      import math\nfrom gnuradio import gr\n\n\nclass blk(gr.basic_block):  # other\
       \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
       \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
       \ FFT_size=1024, sample_rate=25E6, frequency_low=10.9e6,\n                frequency_high=11.1e6):\
       \  # only default arguments here\n        \"\"\"arguments to this function show\
-      \ up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n         \
-      \   self,\n            name='Selective FFT Vector Averager',   # will show up\
-      \ in GRC\n            in_sig=[(np.float32,FFT_size)],\n            out_sig=[np.float32]\n\
+      \ up as parameters in GRC\"\"\"\n        gr.basic_block.__init__(\n        \
+      \    self,\n            name='Selective FFT Vdector Averager',   # will show\
+      \ up in GRC\n            in_sig=[(np.float32,FFT_size)],\n            out_sig=[np.float32]\n\
       \        )\n        # if an attribute with the same name as a parameter is found,\n\
       \        # a callback is registered (properties work, too).\n        self.FFT_size\
       \ = FFT_size\n        self.sample_rate = sample_rate\n        self.frequency_low\
@@ -270,10 +306,13 @@ blocks:
       \        \n        # Calculate the bins we are interested in sampling\n    \
       \    self.bin_width = (self.sample_rate)/self.FFT_size\n        self.bin_low\
       \ = math.floor(self.frequency_low/self.bin_width)\n        self.bin_high = math.floor(self.frequency_high/self.bin_width)\n\
-      \n    def work(self, input_items, output_items):\n        # Loop through all\
-      \ received vectors\n        for i in range(len(input_items[0])):\n         \
-      \   output_items[0][i] = input_items[0][i][self.bin_low:self.bin_high].mean()\n\
-      \        return len(output_items[0])\n"
+      \        print(\"tesT\")\n\n    def general_work(self, input_items, output_items):\n\
+      \        # Loop through all received vectors\n        print(\"Input: \", len(input_items[0]))\n\
+      \        for i in range(len(input_items[0])-1):\n            output_items[0][i]\
+      \ = input_items[0][i][self.bin_low:self.bin_high].mean()\n        print(\"Output:\
+      \ \", len(output_items[0]))\n        print(\"-----------------------\")\n  \
+      \      \n        #consoooom\n        self.consume(0, len(input_items[0]))\n\
+      \        \n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -283,7 +322,7 @@ blocks:
     minoutbuf: '0'
     sample_rate: samp_rate
   states:
-    _io_cache: ('Selective FFT Vector Averager', 'blk', [('FFT_size', '1024'), ('sample_rate',
+    _io_cache: ('Selective FFT Vdector Averager', 'blk', [('FFT_size', '1024'), ('sample_rate',
       '25000000.0'), ('frequency_low', '10900000.0'), ('frequency_high', '11100000.0')],
       [('0', 'float', 1024)], [('0', 'float', 1)], 'Embedded Python Block example
       - a simple multiply const', ['FFT_size', 'frequency_high', 'frequency_low',
@@ -313,21 +352,22 @@ blocks:
       \   output[0]: debug state information\n                output[1]: debug timer\
       \ information\n            \"\"\"\n        gr.sync_block.__init__(\n       \
       \     self,\n            name='Ionosonde Trigger 2.0', \n            in_sig=[np.float32,\
-      \ np.complex64, np.float32],\n            out_sig=[np.float32, np.float32]\n\
-      \        )\n        \n        self.trigger_Power = trigger_delta_dB\n      \
-      \  self.samp_rate = samp_rate\n        self.capture_window = capture_window\n\
-      \        # timer max is calculated as sample rate * capture window in seconds.\n\
-      \        self.timerMax = self.timer = self.samp_rate * self.capture_window\n\
-      \        self.writing = False\n       \n\n    def work(self, input_items, output_items):\n\
-      \        \n        self.power_movavg = input_items[2]\n        \n        # Check\
-      \ if we are writing\n        if self.writing:\n            # If we are and we\
-      \ still have time on the clock\n            if self.timer < self.timerMax:\n\
-      \                # Then write data to file\n                self.file.write(input_items[1][:])\n\
-      \                self.timer += len(input_items[1])\n                output_items[0][:]\
-      \ = 2\n            else:\n                # Otherwise close the file and reset\
-      \ flags\n                self.file.close()\n                self.writing = False\n\
-      \                output_items[0][:] = 0\n        \n        # If not writing,\
-      \ do we have high power on trigger?\n        elif np.any(input_items[0] > self.trigger_Power+self.power_movavg):\n\
+      \ np.complex64],\n            out_sig=[np.float32, np.float32]\n        )\n\
+      \        \n        self.trigger_Power = trigger_delta_dB\n        self.samp_rate\
+      \ = samp_rate\n        self.capture_window = capture_window\n        # timer\
+      \ max is calculated as sample rate * capture window in seconds.\n        self.timerMax\
+      \ = self.timer = self.samp_rate * self.capture_window\n        self.writing\
+      \ = False\n       \n\n    def work(self, input_items, output_items):\n     \
+      \   print(\"Trigger in: \", len(input_items[1]))\n        self.power_movavg\
+      \ = 30\n        \n        # Check if we are writing\n        if self.writing:\n\
+      \            # If we are and we still have time on the clock\n            if\
+      \ self.timer < self.timerMax:\n                # Then write data to file\n \
+      \               self.file.write(input_items[1][:])\n                self.timer\
+      \ += len(input_items[1])\n                output_items[0][:] = 2\n         \
+      \   else:\n                # Otherwise close the file and reset flags\n    \
+      \            self.file.close()\n                self.writing = False\n     \
+      \           output_items[0][:] = 0\n        \n        # If not writing, do we\
+      \ have high power on trigger?\n        elif np.any(input_items[0] > self.trigger_Power+self.power_movavg):\n\
       \            # Set status variables\n            self.writing = True\n     \
       \       self.timer = 0\n            output_items[0][:] = 1\n            \n \
       \           # Open new file and do first write\n            self.filename =\
@@ -348,11 +388,10 @@ blocks:
   states:
     _io_cache: '(''Ionosonde Trigger 2.0'', ''blk'', [(''trigger_delta_dB'', ''5''),
       (''samp_rate'', ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'',
-      1), (''1'', ''complex'', 1), (''2'', ''float'', 1)], [(''0'', ''float'', 1),
-      (''1'', ''float'', 1)], '' INPUTS/OUTPUTS:\n                input[0]: Signal
-      average power\n                input[1]: Raw data from SDR\n                input[2]:
-      Moving average of [0]\n                \n                output[0]: debug state
-      information\n                output[1]: debug timer information\n            '',
+      1), (''1'', ''complex'', 1)], [(''0'', ''float'', 1), (''1'', ''float'', 1)],
+      '' INPUTS/OUTPUTS:\n                input[0]: Signal average power\n                input[1]:
+      Raw data from SDR\n                input[2]: Moving average of [0]\n                \n                output[0]:
+      debug state information\n                output[1]: debug timer information\n            '',
       [''capture_window'', ''samp_rate''])'
     bus_sink: false
     bus_source: false
@@ -454,9 +493,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [656, 876.0]
+    coordinate: [712, 868.0]
     rotation: 0
-    state: true
+    state: enabled
 - name: qtgui_number_sink_1_0
   id: qtgui_number_sink
   parameters:
@@ -742,7 +781,7 @@ blocks:
     bus_structure: null
     coordinate: [648, 548.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: qtgui_vector_sink_f_0
   id: qtgui_vector_sink_f
   parameters:
@@ -853,7 +892,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [696, 1172.0]
+    coordinate: [672, 1212.0]
     rotation: 0
     state: disabled
 - name: virtual_source_1_0
@@ -866,14 +905,14 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [208, 1124.0]
+    coordinate: [176, 1148.0]
     rotation: 0
     state: enabled
 
 connections:
+- [analog_const_source_x_0, '0', blocks_throttle_1, '0']
 - [analog_sig_source_x_0, '0', blocks_throttle_0, '0']
 - [blocks_complex_to_mag_squared_0_0, '0', blocks_nlog10_ff_0_0, '0']
-- [blocks_moving_average_xx_0_0, '0', epy_block_1_0, '2']
 - [blocks_moving_average_xx_0_0, '0', qtgui_number_sink_2_0, '0']
 - [blocks_multiply_const_xx_0, '0', blocks_complex_to_mag_squared_0_0, '0']
 - [blocks_nlog10_ff_0_0, '0', epy_block_0, '0']
@@ -882,6 +921,8 @@ connections:
 - [blocks_throttle_0, '0', blocks_stream_to_vector_0, '0']
 - [blocks_throttle_0, '0', qtgui_time_sink_x_0, '0']
 - [blocks_throttle_0, '0', virtual_sink_0, '0']
+- [blocks_throttle_1, '0', epy_block_1_0, '0']
+- [blocks_throttle_1, '0', qtgui_number_sink_0, '0']
 - [epy_block_0, '0', blocks_null_sink_0, '0']
 - [epy_block_0, '0', virtual_sink_1, '0']
 - [epy_block_1_0, '0', qtgui_number_sink_1_0, '0']
