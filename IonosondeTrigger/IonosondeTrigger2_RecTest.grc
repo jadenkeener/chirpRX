@@ -115,7 +115,7 @@ blocks:
     bus_structure: null
     coordinate: [32, 700.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: analog_sig_source_x_0
   id: analog_sig_source_x
   parameters:
@@ -273,7 +273,7 @@ blocks:
     ignoretag: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samples_per_second: 32e3
+    samples_per_second: '32'
     type: float
     vlen: '1'
   states:
@@ -282,7 +282,7 @@ blocks:
     bus_structure: null
     coordinate: [224, 852.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: epy_block_0
   id: epy_block
   parameters:
@@ -291,14 +291,14 @@ blocks:
       \ GRC will instantiate the first class it finds\nto get ports and parameters\
       \ of your block. The arguments to __init__  will\nbe the parameters. All of\
       \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      import math\nfrom gnuradio import gr\n\n\nclass blk(gr.basic_block):  # other\
+      import math\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):  # other\
       \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
       \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
       \ FFT_size=1024, sample_rate=25E6, frequency_low=10.9e6,\n                frequency_high=11.1e6):\
       \  # only default arguments here\n        \"\"\"arguments to this function show\
-      \ up as parameters in GRC\"\"\"\n        gr.basic_block.__init__(\n        \
-      \    self,\n            name='Selective FFT Vdector Averager',   # will show\
-      \ up in GRC\n            in_sig=[(np.float32,FFT_size)],\n            out_sig=[np.float32]\n\
+      \ up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n         \
+      \   self,\n            name='Selective FFT Vector Averager',   # will show up\
+      \ in GRC\n            in_sig=[(np.float32,FFT_size)],\n            out_sig=[np.float32]\n\
       \        )\n        # if an attribute with the same name as a parameter is found,\n\
       \        # a callback is registered (properties work, too).\n        self.FFT_size\
       \ = FFT_size\n        self.sample_rate = sample_rate\n        self.frequency_low\
@@ -306,13 +306,12 @@ blocks:
       \        \n        # Calculate the bins we are interested in sampling\n    \
       \    self.bin_width = (self.sample_rate)/self.FFT_size\n        self.bin_low\
       \ = math.floor(self.frequency_low/self.bin_width)\n        self.bin_high = math.floor(self.frequency_high/self.bin_width)\n\
-      \        print(\"tesT\")\n\n    def general_work(self, input_items, output_items):\n\
+      \        print(\"tesT\")\n\n    def work(self, input_items, output_items):\n\
       \        # Loop through all received vectors\n        print(\"Input: \", len(input_items[0]))\n\
-      \        for i in range(len(input_items[0])-1):\n            output_items[0][i]\
+      \        for i in range(len(input_items[0])):\n            output_items[0][i]\
       \ = input_items[0][i][self.bin_low:self.bin_high].mean()\n        print(\"Output:\
       \ \", len(output_items[0]))\n        print(\"-----------------------\")\n  \
-      \      \n        #consoooom\n        self.consume(0, len(input_items[0]))\n\
-      \        \n        return len(output_items[0])\n"
+      \      return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -322,7 +321,7 @@ blocks:
     minoutbuf: '0'
     sample_rate: samp_rate
   states:
-    _io_cache: ('Selective FFT Vdector Averager', 'blk', [('FFT_size', '1024'), ('sample_rate',
+    _io_cache: ('Selective FFT Vector Averager', 'blk', [('FFT_size', '1024'), ('sample_rate',
       '25000000.0'), ('frequency_low', '10900000.0'), ('frequency_high', '11100000.0')],
       [('0', 'float', 1024)], [('0', 'float', 1)], 'Embedded Python Block example
       - a simple multiply const', ['FFT_size', 'frequency_high', 'frequency_low',
@@ -396,9 +395,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [960, 1128.0]
+    coordinate: [960, 1136.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: fft_vxx_0
   id: fft_vxx
   parameters:
@@ -417,7 +416,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [928, 388.0]
+    coordinate: [936, 388.0]
     rotation: 0
     state: enabled
 - name: import_0
@@ -488,7 +487,7 @@ blocks:
     unit7: ''
     unit8: ''
     unit9: ''
-    update_time: '0.10'
+    update_time: 1/samp_rate
   states:
     bus_sink: false
     bus_source: false
@@ -558,7 +557,7 @@ blocks:
     bus_structure: null
     coordinate: [1376, 1036.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: qtgui_number_sink_1_1_0
   id: qtgui_number_sink
   parameters:
@@ -621,7 +620,7 @@ blocks:
     bus_structure: null
     coordinate: [1376, 1180.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: qtgui_number_sink_2_0
   id: qtgui_number_sink
   parameters:
@@ -781,7 +780,7 @@ blocks:
     bus_structure: null
     coordinate: [648, 548.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: qtgui_vector_sink_f_0
   id: qtgui_vector_sink_f
   parameters:
@@ -894,7 +893,7 @@ blocks:
     bus_structure: null
     coordinate: [672, 1212.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: virtual_source_1_0
   id: virtual_source
   parameters:
@@ -905,9 +904,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [176, 1148.0]
+    coordinate: [184, 1140.0]
     rotation: 0
-    state: enabled
+    state: disabled
 
 connections:
 - [analog_const_source_x_0, '0', blocks_throttle_1, '0']

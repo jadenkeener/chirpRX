@@ -11,15 +11,15 @@ import math
 from gnuradio import gr
 
 
-class blk(gr.basic_block):  # other base classes are basic_block, decim_block, interp_block
+class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
     """Embedded Python Block example - a simple multiply const"""
 
     def __init__(self, FFT_size=1024, sample_rate=25E6, frequency_low=10.9e6,
                 frequency_high=11.1e6):  # only default arguments here
         """arguments to this function show up as parameters in GRC"""
-        gr.basic_block.__init__(
+        gr.sync_block.__init__(
             self,
-            name='Selective FFT Vdector Averager',   # will show up in GRC
+            name='Selective FFT Vector Averager',   # will show up in GRC
             in_sig=[(np.float32,FFT_size)],
             out_sig=[np.float32]
         )
@@ -36,15 +36,11 @@ class blk(gr.basic_block):  # other base classes are basic_block, decim_block, i
         self.bin_high = math.floor(self.frequency_high/self.bin_width)
         print("tesT")
 
-    def general_work(self, input_items, output_items):
+    def work(self, input_items, output_items):
         # Loop through all received vectors
         print("Input: ", len(input_items[0]))
-        for i in range(len(input_items[0])-1):
+        for i in range(len(input_items[0])):
             output_items[0][i] = input_items[0][i][self.bin_low:self.bin_high].mean()
         print("Output: ", len(output_items[0]))
         print("-----------------------")
-        
-        #consoooom
-        self.consume(0, len(input_items[0]))
-        
         return len(output_items[0])
