@@ -15,25 +15,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import os
+import scipy.signal as signal
 
 
 ############ USER VARS ##################
 
-sample_rate = 25E6 # Data sample rate in hz
-fft_size =  1024 # Samples/Bins per FFT
-sweep_rate = 100E3 # Theoretical sweep rate of ionosonde in hz/s
-fileName = r"../../sdrtest.raw" # Path to data
-ionogram_length_t = 0.1 # Time length of ionogram in seconds
-freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
-dataRate=int(1.25e8) # Maximum number of samples to load into memory at any given moment
-
-# sample_rate = 32E3 # Data sample rate in hz
-# fft_size =  512 # Samples/Bins per FFT
-# sweep_rate = 3.05E3 # Theoretical sweep rate of ionosonde in hz/s
-# fileName = r"./samp32k_sweep3000_trans5k.raw" # Path to data
-# ionogram_length_t = 1.5 # Time length of ionogram in seconds
+# sample_rate = 25E6 # Data sample rate in hz
+# fft_size =  1024 # Samples/Bins per FFT
+# sweep_rate = 5000E3 # Theoretical sweep rate of ionosonde in hz/s
+# fileName = r"../../sdrtest.raw" # Path to data
+# ionogram_length_t = 0.1 # Time length of ionogram in seconds
 # freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
-# dataRate=int(100e3) # Maximum number of samples to load into memory at any given moment
+# dataRate=int(1.25e8) # Maximum number of samples to load into memory at any given moment
+
+sample_rate = 32E3 # Data sample rate in hz
+fft_size =  512 # Samples/Bins per FFT
+sweep_rate = 3.05E3 # Theoretical sweep rate of ionosonde in hz/s
+fileName = r"./samp32k_sweep3000_trans5k.raw" # Path to data
+ionogram_length_t = 1.5 # Time length of ionogram in seconds
+freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
+dataRate=int(100e3) # Maximum number of samples to load into memory at any given moment
 
 #########################################
 
@@ -45,9 +46,7 @@ print("Sample Rate: ", sample_rate)
 print("Sweep Rate: ", sweep_rate)
 print("File: ", fileName)
 
-# Open file and define some useful values
-dataFile = open(fileName,"rb") # Data file
-#readPointer = 0 # Keeps track of where we are in the file
+
 delta_t = fft_size/sample_rate # Time between successive FFTs (time between each row of spectrum)
 bin_width = sample_rate/fft_size # Bin width in hz
 ionogram_length_n = math.ceil(ionogram_length_t/delta_t-1) # Number of time instances in our spectrogram
@@ -80,10 +79,21 @@ def rawSpectrogram(data):
     print("plt end")
     return spectrum
 
+def rawSpectrogramScipy(data):
+    # Generate raw spectrogram via plt.
+    # This is a convenient way to do the sequential FFTs without writing our own code.
+    print("plt start")
+    freqs, t, spectrum = signal.spectrogram(data, nfft=fft_size, fs=sample_rate, noverlap=0)
+    oneSideLength = math.floor(len(spectrum[0])/2)
+    # spectrum_oneSide = np.empty((fft_size, oneSideLength), dtype=np.complex64)
+    spectrum_oneSide = np.flipud(spectrum[:, :oneSideLength])
+    print("plt end")
+    return spectrum_oneSide
+
 
 
 def ionograte(spectrum):
-    global rows_completed, absolute_n, ionogram_spectrum, slope_fix
+    global rows_completed, absolute_n, ionogram_spectrum
     print("ion start")
     for row in range(0+freq_offset+rows_completed, len(spectrum)):
         # Calculate the time range for the current bin. This is continuous time and will be discretized.
@@ -112,9 +122,10 @@ def ionograte(spectrum):
     try:
         return readPointer
     except:
-        return 1e10
+        return "Done"
 
 
+# Not yet implemented
 def plotIonogram(ionogram_spectrum):
     plt.figure(3)
     ionogram_spectrum = 10. * np.log10(ionogram_spectrum) #psd
@@ -136,7 +147,7 @@ def plotIonogram(ionogram_spectrum):
 def main():
     global rows_completed, ionogram_spectrum
     readPointer = 0
-    while (readPointer/8 < os.stat(fileName).st_size) & (rows_completed<=1023):
+    while (readPointer != "Done"): # TODO: MAKE THIS CONDITION MAKE SENSE
         data = readData(readPointer)
         spectrum = rawSpectrogram(data)
         readPointer = ionograte(spectrum)
@@ -144,20 +155,20 @@ def main():
 
 
 
-    # In this block we will generate a transposed spectrogram. Not necessary
-    # but useful for debugging and presentation
-    plt.figure(2)
-    spectrum = 10. * np.log10(spectrum) #psd
-    spectrum = np.transpose(spectrum)
-    plt.imshow(spectrum, cmap='hot',origin='lower')
-    del spectrum
-    plt.axis('auto')
-    plt.title("Transposed Spectrogram")
-    plt.xlabel("Frequency")
-    plt.ylabel("Time")
-    #plt.xticks(range(math.floor(min(t)), math.ceil(max(t))))
-    #plt.yticks(range(math.floor(min(freqs)), math.ceil(max(freqs))))
-    #plt.show()
+    # # In this block we will generate a transposed spectrogram. Not necessary
+    # # but useful for debugging and presentation
+    # plt.figure(2)
+    # spectrum = 10. * np.log10(spectrum) #psd
+    # spectrum = np.transpose(spectrum)
+    # plt.imshow(spectrum, cmap='hot',origin='lower')
+    # del spectrum
+    # plt.axis('auto')
+    # plt.title("Transposed Spectrogram")
+    # plt.xlabel("Frequency")
+    # plt.ylabel("Time")
+    # #plt.xticks(range(math.floor(min(t)), math.ceil(max(t))))
+    # #plt.yticks(range(math.floor(min(freqs)), math.ceil(max(freqs))))
+    # #plt.show()
 
 
     # Now we plot the ionogram itself beased on the truncated spectrum
