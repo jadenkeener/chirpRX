@@ -19,21 +19,21 @@ import os
 
 ############ USER VARS ##################
 
-#sample_rate = 25E6 # Data sample rate in hz
-#fft_size =  1024 # Samples/Bins per FFT
-#sweep_rate = 100E3 # Theoretical sweep rate of ionosonde in hz/s
-#fileName = r"../sdrtest.raw" # Path to data 
-#ionogram_length_t = 0.1 # Time length of ionogram in seconds
-#freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
-#dataRate=int(1.25e8) # Maximum number of samples to load into memory at any given moment
-
-sample_rate = 32E3 # Data sample rate in hz
-fft_size =  512 # Samples/Bins per FFT
-sweep_rate = 3.05E3 # Theoretical sweep rate of ionosonde in hz/s
-fileName = r"../samp32k_sweep3000_trans5k.raw" # Path to data 
-ionogram_length_t = 3 # Time length of ionogram in seconds
+sample_rate = 25E6 # Data sample rate in hz
+fft_size =  1024 # Samples/Bins per FFT
+sweep_rate = 100E3 # Theoretical sweep rate of ionosonde in hz/s
+fileName = r"../../sdrtest.raw" # Path to data
+ionogram_length_t = 0.1 # Time length of ionogram in seconds
 freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
-dataRate=int(100e3) # Maximum number of samples to load into memory at any given moment
+dataRate=int(1.25e8) # Maximum number of samples to load into memory at any given moment
+
+# sample_rate = 32E3 # Data sample rate in hz
+# fft_size =  512 # Samples/Bins per FFT
+# sweep_rate = 3.05E3 # Theoretical sweep rate of ionosonde in hz/s
+# fileName = r"./samp32k_sweep3000_trans5k.raw" # Path to data
+# ionogram_length_t = 1.5 # Time length of ionogram in seconds
+# freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
+# dataRate=int(100e3) # Maximum number of samples to load into memory at any given moment
 
 #########################################
 
@@ -83,21 +83,23 @@ def rawSpectrogram(data):
 
 
 def ionograte(spectrum):
-    global rows_completed, absolute_n, ionogram_spectrum
+    global rows_completed, absolute_n, ionogram_spectrum, slope_fix
     print("ion start")
     for row in range(0+freq_offset+rows_completed, len(spectrum)):
         # Calculate the time range for the current bin. This is continuous time and will be discretized.
         bin_start_t = (bin_width*(row-freq_offset))/sweep_rate
 
         # Now discretize these times
-        bin_start_n = math.floor(bin_start_t/delta_t) - math.floor(ionogram_length_n/2) - absolute_n # Subtract to see time before expected
+        bin_start_n = math.floor(bin_start_t/delta_t) - math.floor(ionogram_length_n/2) - absolute_n  # Subtract to see time before expected
         bin_end_n = bin_start_n+ionogram_length_n
         # If we are at the beginning of the recording we won't be able to see into the past, so set to 0
         if bin_start_n < 0:
             bin_start_n = 0
         if bin_end_n > len(spectrum[0]):
-            readPointer = (bin_start_n+absolute_n+80)*fft_size
+            readPointer = (bin_start_n+absolute_n)*fft_size*8
             absolute_n += bin_start_n
+
+            #readPointer = bin_end_n-bin_start_n*fft_size*-1
             rows_completed = row # real number is this minus 1, but this value is more useful
             print(rows_completed)
             break
