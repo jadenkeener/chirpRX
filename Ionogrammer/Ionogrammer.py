@@ -1,15 +1,13 @@
 # Ionogrammer.py
 # By Jaden Keener / NMT Chirp Team
-# Last updated 2/26/23 14:54
+# Last updated 3/7/23 
 #
 # This program reads raw IQ data into memory and generates spectrograms
 # and Ionograms based on preset parameters.
 #
 # The most important parameters to set are file path, sample rate, fft size,
 # and sweep rate.
-#
-# TODO: Optimize program to read only parts of IQ file into memory at a time.
-#       This will allow us to work on large data sets without memory constraints
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,21 +19,21 @@ import sys
 
 ############ USER VARS ##################
 
-# sample_rate = 25E6 # Data sample rate in hz
-# fft_size =  1024 # Samples/Bins per FFT
-# sweep_rate = 5000E3 # Theoretical sweep rate of ionosonde in hz/s
-# fileName = r"../../sdrtest.raw" # Path to data
-# ionogram_length_t = 0.1 # Time length of ionogram in seconds
-# freq_offset=0 # This parameter is not necessary, but can help shift your time baseline
-# dataRate=int(1.25e8) # Maximum number of samples to load into memory at any given moment
+sample_rate = 17E6 # Data sample rate in hz
+fft_size =  128 # Samples/Bins per FFT
+sweep_rate = 83367 # Theoretical sweep rate of ionosonde in hz/s
+fileName = r"/home/chirp/Desktop/GQRX_Recordings/ionotest.raw" # Path to data
+ionogram_length_t = 0.5 # Time length of ionogram in seconds
+freq_offset=2 # This parameter is not necessary, but can help shift your time baseline
+dataRate=int(2e8) # Maximum number of samples to load into memory at any given moment
 
-sample_rate = 32E3 # Data sample rate in hz
-fft_size =  512 # Samples/Bins per FFT
-sweep_rate = 3.05E3 # Theoretical sweep rate of ionosonde in hz/s
-fileName = r"./samp32k_sweep3000_trans5k.raw" # Path to data
-ionogram_length_t = 1.5 # Time length of ionogram in seconds
-freq_offset=10 # This parameter is not necessary, but can help shift your time baseline. In bins
-dataRate=int(100e3) # Maximum number of samples to load into memory at any given moment
+# sample_rate = 32E3 # Data sample rate in hz
+# fft_size =  512 # Samples/Bins per FFT
+# sweep_rate = 3.05E3 # Theoretical sweep rate of ionosonde in hz/s
+# fileName = r"./samp32k_sweep3000_trans5k.raw" # Path to data
+# ionogram_length_t = 1.5 # Time length of ionogram in seconds
+# freq_offset=10 # This parameter is not necessary, but can help shift your time baseline. In bins
+# dataRate=int(100e3) # Maximum number of samples to load into memory at any given moment
 
 #########################################
 
