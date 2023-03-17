@@ -9,6 +9,7 @@ be the parameters. All of them are required to have default values!
 import numpy as np
 import math
 from gnuradio import gr
+import pmt
 
 
 class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
@@ -33,14 +34,25 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         # Calculate the bins we are interested in sampling
         self.bin_width = (self.sample_rate)/self.FFT_size
         self.bin_low = math.floor(self.frequency_low/self.bin_width)
-        self.bin_high = math.floor(self.frequency_high/self.bin_width)
-        print("tesT")
+        print("bin low: ", self.bin_low)
+        self.bin_high = math.ceil(self.frequency_high/self.bin_width)
+        print("bin high: ", self.bin_high)
+        #print("tesT")
+        
+        #Message Handling
+        self.portName = 'controlOut'
+        self.message_port_register_out(pmt.intern(self.portName))
+        
 
     def work(self, input_items, output_items):
         # Loop through all received vectors
-        print("Input: ", len(input_items[0]))
+        #print("Input fft: ", len(input_items[0]))
         for i in range(len(input_items[0])):
-            output_items[0][i] = input_items[0][i][self.bin_low:self.bin_high].mean()
-        print("Output: ", len(output_items[0]))
-        print("-----------------------")
+            #print("bruh")
+            output_items[0][i] = input_items[0][i][self.bin_low:self.bin_high].max()
+            PMT_msg = pmt.from_double(output_items[0][i])
+            self.message_port_pub(pmt.intern(self.portName), PMT_msg)
+   
+        #print("Output fft: ", len(output_items[0]))
+        #print("-----------------------")
         return len(output_items[0])

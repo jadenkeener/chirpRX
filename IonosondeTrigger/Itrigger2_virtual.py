@@ -80,7 +80,7 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.samp_rate = samp_rate = 32e3
+        self.samp_rate = samp_rate = 200e6/12
         self.movavg_length = movavg_length = 10000
         self.freq = freq = 1e3
         self.fftsz = fftsz = 1024
@@ -175,6 +175,39 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.qtgui_number_sink_1_1_0.enable_autoscale(False)
         self._qtgui_number_sink_1_1_0_win = sip.wrapinstance(self.qtgui_number_sink_1_1_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_number_sink_1_1_0_win)
+        self.qtgui_number_sink_1_0_0 = qtgui.number_sink(
+            gr.sizeof_float,
+            0,
+            qtgui.NUM_GRAPH_HORIZ,
+            1,
+            None # parent
+        )
+        self.qtgui_number_sink_1_0_0.set_update_time(0.10)
+        self.qtgui_number_sink_1_0_0.set_title("TFFTOut")
+
+        labels = ['', '', '', '', '',
+            '', '', '', '', '']
+        units = ['', '', '', '', '',
+            '', '', '', '', '']
+        colors = [("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"),
+            ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black")]
+        factor = [1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1]
+
+        for i in range(1):
+            self.qtgui_number_sink_1_0_0.set_min(i, -1)
+            self.qtgui_number_sink_1_0_0.set_max(i, 3)
+            self.qtgui_number_sink_1_0_0.set_color(i, colors[i][0], colors[i][1])
+            if len(labels[i]) == 0:
+                self.qtgui_number_sink_1_0_0.set_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_number_sink_1_0_0.set_label(i, labels[i])
+            self.qtgui_number_sink_1_0_0.set_unit(i, units[i])
+            self.qtgui_number_sink_1_0_0.set_factor(i, factor[i])
+
+        self.qtgui_number_sink_1_0_0.enable_autoscale(True)
+        self._qtgui_number_sink_1_0_0_win = sip.wrapinstance(self.qtgui_number_sink_1_0_0.qwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_number_sink_1_0_0_win)
         self.qtgui_number_sink_1_0 = qtgui.number_sink(
             gr.sizeof_float,
             0,
@@ -208,71 +241,33 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.qtgui_number_sink_1_0.enable_autoscale(False)
         self._qtgui_number_sink_1_0_win = sip.wrapinstance(self.qtgui_number_sink_1_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_number_sink_1_0_win)
-        self.qtgui_number_sink_0 = qtgui.number_sink(
-            gr.sizeof_float,
-            0,
-            qtgui.NUM_GRAPH_HORIZ,
-            1,
-            None # parent
-        )
-        self.qtgui_number_sink_0.set_update_time(1/samp_rate)
-        self.qtgui_number_sink_0.set_title("Power")
-
-        labels = ['', '', '', '', '',
-            '', '', '', '', '']
-        units = ['', '', '', '', '',
-            '', '', '', '', '']
-        colors = [("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"),
-            ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black"), ("black", "black")]
-        factor = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-
-        for i in range(1):
-            self.qtgui_number_sink_0.set_min(i, -1)
-            self.qtgui_number_sink_0.set_max(i, 2)
-            self.qtgui_number_sink_0.set_color(i, colors[i][0], colors[i][1])
-            if len(labels[i]) == 0:
-                self.qtgui_number_sink_0.set_label(i, "Data {0}".format(i))
-            else:
-                self.qtgui_number_sink_0.set_label(i, labels[i])
-            self.qtgui_number_sink_0.set_unit(i, units[i])
-            self.qtgui_number_sink_0.set_factor(i, factor[i])
-
-        self.qtgui_number_sink_0.enable_autoscale(False)
-        self._qtgui_number_sink_0_win = sip.wrapinstance(self.qtgui_number_sink_0.qwidget(), Qt.QWidget)
-        self.top_layout.addWidget(self._qtgui_number_sink_0_win)
         self._movavg_length_range = Range(1000, 16383, 1, 10000, 200)
         self._movavg_length_win = RangeWidget(self._movavg_length_range, self.set_movavg_length, "Moving Average Length", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._movavg_length_win)
         self.fft_vxx_0 = fft.fft_vcc(fftsz, True, window.blackmanharris(fftsz), True, 1)
-        self.epy_block_1_0 = epy_block_1_0.blk(trigger_delta_dB=300, samp_rate=samp_rate, capture_window=10)
-        self.epy_block_0 = epy_block_0.blk(FFT_size=fftsz, sample_rate=samp_rate, frequency_low=4.9e3, frequency_high=5.1e3)
-        self.blocks_throttle_1 = blocks.throttle(gr.sizeof_float*1, 32,True)
+        self.epy_block_1_0 = epy_block_1_0.blk(trigger_delta_dB=300, samp_rate=samp_rate, capture_window=5)
+        self.epy_block_0 = epy_block_0.blk(FFT_size=fftsz, sample_rate=samp_rate, frequency_low=500e3, frequency_high=800e3)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, fftsz)
-        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float*1)
         self.blocks_nlog10_ff_0_0 = blocks.nlog10_ff(10, fftsz, 0)
-        self.blocks_multiply_const_xx_0 = blocks.multiply_const_cc(1/fftsz, 1024)
+        self.blocks_multiply_const_xx_0 = blocks.multiply_const_cc(1/fftsz, fftsz)
         self.blocks_complex_to_mag_squared_0_0 = blocks.complex_to_mag_squared(fftsz)
         self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, freq, 1, 0, 0)
-        self.analog_const_source_x_0 = analog.sig_source_f(0, analog.GR_CONST_WAVE, 0, 0, 10)
 
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_const_source_x_0, 0), (self.blocks_throttle_1, 0))
+        self.msg_connect((self.epy_block_0, 'controlOut'), (self.epy_block_1_0, 'controlIn'))
         self.connect((self.analog_sig_source_x_0, 0), (self.blocks_throttle_0, 0))
         self.connect((self.blocks_complex_to_mag_squared_0_0, 0), (self.blocks_nlog10_ff_0_0, 0))
         self.connect((self.blocks_multiply_const_xx_0, 0), (self.blocks_complex_to_mag_squared_0_0, 0))
         self.connect((self.blocks_nlog10_ff_0_0, 0), (self.epy_block_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
         self.connect((self.blocks_throttle_0, 0), (self.blocks_stream_to_vector_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.epy_block_1_0, 1))
+        self.connect((self.blocks_throttle_0, 0), (self.epy_block_1_0, 0))
         self.connect((self.blocks_throttle_0, 0), (self.qtgui_time_sink_x_0, 0))
-        self.connect((self.blocks_throttle_1, 0), (self.epy_block_1_0, 0))
-        self.connect((self.blocks_throttle_1, 0), (self.qtgui_number_sink_0, 0))
-        self.connect((self.epy_block_0, 0), (self.blocks_null_sink_0, 0))
+        self.connect((self.epy_block_0, 0), (self.qtgui_number_sink_1_0_0, 0))
         self.connect((self.epy_block_1_0, 0), (self.qtgui_number_sink_1_0, 0))
         self.connect((self.epy_block_1_0, 1), (self.qtgui_number_sink_1_1_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_const_xx_0, 0))
@@ -295,7 +290,6 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.blocks_throttle_0.set_sample_rate(self.samp_rate)
         self.epy_block_0.sample_rate = self.samp_rate
         self.epy_block_1_0.samp_rate = self.samp_rate
-        self.qtgui_number_sink_0.set_update_time(1/self.samp_rate)
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
 
     def get_movavg_length(self):
