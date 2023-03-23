@@ -21,8 +21,8 @@ import sys
 
 sample_rate = 200E6/12 # Data sample rate in hz
 fft_size =  128 # Samples/Bins per FFT
-sweep_rate = 81367 # Theoretical sweep rate of ionosonde in hz/s
-fileName = r"/home/chirp/Desktop/GQRX_Recordings/ionotest.raw" # Path to data
+sweep_rate = 100.5e3 # Theoretical sweep rate of ionosonde in hz/s
+fileName = r"test.chirp" # Path to data
 ionogram_length_t = 0.5 # Time length of ionogram in seconds
 freq_offset=2 # This parameter is not necessary, but can help shift your time baseline
 dataRate=int(2e8) # Maximum number of samples to load into memory at any given moment
@@ -181,7 +181,7 @@ def main():
     plt.figure(3)
     ionogram_spectrum = 10. * np.log10(ionogram_spectrum) #psd
     ionogram_spectrum = np.transpose(ionogram_spectrum) 
-    plt.imshow(ionogram_spectrum, cmap='jet', vmax=np.max(ionogram_spectrum)-10, origin='lower')
+    plt.imshow(ionogram_spectrum, origin='lower')
     del ionogram_spectrum
     plt.axis('auto')
     plt.title("Ionogram")
