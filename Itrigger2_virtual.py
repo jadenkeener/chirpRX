@@ -26,6 +26,7 @@ from gnuradio.filter import firdes
 import sip
 from gnuradio import analog
 from gnuradio import blocks
+from gnuradio import filter
 from gnuradio import gr
 from gnuradio.fft import window
 import sys
@@ -33,10 +34,8 @@ import signal
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
-from gnuradio.qtgui import Range, RangeWidget
-from PyQt5 import QtCore
 import Itrigger2_virtual_epy_block_1 as epy_block_1  # embedded python block
-import math
+import Itrigger2_virtual_epy_block_1_0 as epy_block_1_0  # embedded python block
 
 
 
@@ -78,24 +77,58 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.samp_rate = samp_rate = 900e3
-        self.movavg_length = movavg_length = 10000
-        self.freq = freq = 1e3
+        self.samp_rate = samp_rate = 1e6
         self.fftsz = fftsz = 1024
+        self.decimation = decimation = 1000
 
         ##################################################
         # Blocks
         ##################################################
+        self.qtgui_waterfall_sink_x_1 = qtgui.waterfall_sink_c(
+            128, #size
+            window.WIN_BLACKMAN_hARRIS, #wintype
+            0, #fc
+            (samp_rate/decimation), #bw
+            "Filtered", #name
+            1, #number of inputs
+            None # parent
+        )
+        self.qtgui_waterfall_sink_x_1.set_update_time((decimation/samp_rate/128))
+        self.qtgui_waterfall_sink_x_1.enable_grid(True)
+        self.qtgui_waterfall_sink_x_1.enable_axis_labels(True)
+
+
+
+        labels = ['', '', '', '', '',
+                  '', '', '', '', '']
+        colors = [0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+                  1.0, 1.0, 1.0, 1.0, 1.0]
+
+        for i in range(1):
+            if len(labels[i]) == 0:
+                self.qtgui_waterfall_sink_x_1.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_waterfall_sink_x_1.set_line_label(i, labels[i])
+            self.qtgui_waterfall_sink_x_1.set_color_map(i, colors[i])
+            self.qtgui_waterfall_sink_x_1.set_line_alpha(i, alphas[i])
+
+        self.qtgui_waterfall_sink_x_1.set_intensity_range(-140, 10)
+
+        self._qtgui_waterfall_sink_x_1_win = sip.wrapinstance(self.qtgui_waterfall_sink_x_1.qwidget(), Qt.QWidget)
+
+        self.top_layout.addWidget(self._qtgui_waterfall_sink_x_1_win)
         self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
             1024, #size
             window.WIN_BLACKMAN_hARRIS, #wintype
             0, #fc
             samp_rate, #bw
-            "", #name
+            "Raw", #name
             1, #number of inputs
             None # parent
         )
-        self.qtgui_waterfall_sink_x_0.set_update_time(0.10)
+        self.qtgui_waterfall_sink_x_0.set_update_time(0.1)
         self.qtgui_waterfall_sink_x_0.enable_grid(False)
         self.qtgui_waterfall_sink_x_0.enable_axis_labels(True)
 
@@ -121,14 +154,11 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self._qtgui_waterfall_sink_x_0_win = sip.wrapinstance(self.qtgui_waterfall_sink_x_0.qwidget(), Qt.QWidget)
 
         self.top_layout.addWidget(self._qtgui_waterfall_sink_x_0_win)
-        self._movavg_length_range = Range(1000, 16383, 1, 10000, 200)
-        self._movavg_length_win = RangeWidget(self._movavg_length_range, self.set_movavg_length, "Moving Average Length", "counter_slider", float, QtCore.Qt.Horizontal)
-        self.top_layout.addWidget(self._movavg_length_win)
-        self._freq_range = Range(0, samp_rate/2, 100, 1e3, 200)
-        self._freq_win = RangeWidget(self._freq_range, self.set_freq, "Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
-        self.top_layout.addWidget(self._freq_win)
-        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate, offset=800e3)
+        self.filter_fft_low_pass_filter_0 = filter.fft_filter_ccc(decimation, firdes.low_pass(1, samp_rate, 10e3, 10e3, window.WIN_HAMMING, 6.76), 1)
+        self.epy_block_1_0 = epy_block_1_0.blk(slope=100e3, samp_rate=samp_rate, offset=0)
+        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate, offset=300)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
+        self.blocks_multiply_conjugate_cc_0 = blocks.multiply_conjugate_cc(1)
         self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 500e3, 1, 0, 0)
 
 
@@ -136,8 +166,13 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         # Connections
         ##################################################
         self.connect((self.analog_sig_source_x_0, 0), (self.blocks_throttle_0, 0))
+        self.connect((self.blocks_multiply_conjugate_cc_0, 0), (self.filter_fft_low_pass_filter_0, 0))
+        self.connect((self.blocks_multiply_conjugate_cc_0, 0), (self.qtgui_waterfall_sink_x_0, 0))
         self.connect((self.blocks_throttle_0, 0), (self.epy_block_1, 0))
-        self.connect((self.epy_block_1, 0), (self.qtgui_waterfall_sink_x_0, 0))
+        self.connect((self.blocks_throttle_0, 0), (self.epy_block_1_0, 0))
+        self.connect((self.epy_block_1, 0), (self.blocks_multiply_conjugate_cc_0, 0))
+        self.connect((self.epy_block_1_0, 0), (self.blocks_multiply_conjugate_cc_0, 1))
+        self.connect((self.filter_fft_low_pass_filter_0, 0), (self.qtgui_waterfall_sink_x_1, 0))
 
 
     def closeEvent(self, event):
@@ -155,25 +190,24 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.samp_rate = samp_rate
         self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
         self.blocks_throttle_0.set_sample_rate(self.samp_rate)
+        self.filter_fft_low_pass_filter_0.set_taps(firdes.low_pass(1, self.samp_rate, 10e3, 10e3, window.WIN_HAMMING, 6.76))
         self.qtgui_waterfall_sink_x_0.set_frequency_range(0, self.samp_rate)
-
-    def get_movavg_length(self):
-        return self.movavg_length
-
-    def set_movavg_length(self, movavg_length):
-        self.movavg_length = movavg_length
-
-    def get_freq(self):
-        return self.freq
-
-    def set_freq(self, freq):
-        self.freq = freq
+        self.qtgui_waterfall_sink_x_1.set_frequency_range(0, (self.samp_rate/self.decimation))
+        self.qtgui_waterfall_sink_x_1.set_update_time((self.decimation/self.samp_rate/128))
 
     def get_fftsz(self):
         return self.fftsz
 
     def set_fftsz(self, fftsz):
         self.fftsz = fftsz
+
+    def get_decimation(self):
+        return self.decimation
+
+    def set_decimation(self, decimation):
+        self.decimation = decimation
+        self.qtgui_waterfall_sink_x_1.set_frequency_range(0, (self.samp_rate/self.decimation))
+        self.qtgui_waterfall_sink_x_1.set_update_time((self.decimation/self.samp_rate/128))
 
 
 

@@ -1,9 +1,9 @@
 """
-Embedded Python Blocks:
+Local Chirp
+By Jaden Keener, Last updated 3/27/23
 
-Each time this file is saved, GRC will instantiate the first class it finds
-to get ports and parameters of your block. The arguments to __init__  will
-be the parameters. All of them are required to have default values!
+Generates a local tone that sweeps the spectrum at the specified slope
+
 """
 
 import numpy as np
@@ -11,19 +11,16 @@ import pmt
 from gnuradio import gr
 
 
-class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
-    """Embedded Python Block example - a simple multiply const"""
+class blk(gr.sync_block):  
 
-    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):  # only default arguments here
-        """arguments to this function show up as parameters in GRC"""
+    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):
         gr.sync_block.__init__(
             self,
-            name='Local Chirp Test',   # will show up in GRC
+            name='Local Chirp Test 1.0',   
             in_sig=[np.complex64],
             out_sig=[np.complex64]
         )
-        # if an attribute with the same name as a parameter is found,
-        # a callback is registered (properties work, too).
+
         self.slope = slope  
         self.fs = samp_rate
         self.offset = offset
@@ -43,6 +40,8 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)
         self.control = False
         
+            
+        
     def handle_msg(self, msg):
         controlIn = pmt.to_bool(msg)
         
@@ -52,38 +51,30 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         self.controlLast = controlIn
         
     def work(self, input_items, output_items):
-        n = len(input_items[0]) 
     
+        # Find number of samples on this call
+        n = len(input_items[0]) 
+
+        # If we havent progged the whole spectrum
+        if self.lastF <= self.offset/2: # WHY OFFSET/2 ??????????? IDK
         
-        
-        
-        if self.lastF <= self.offset/2:
+            # Calculate the values of T and F we prog to on this call
             newT = self.dt*n + self.lastT
             newF = self.df*n + self.lastF
-                
+            
+            # Make sure arrays are correct size. Can get slightly offsize due
+            # to float precision errors
             t = np.resize(np.arange(self.lastT, newT, self.dt), n)
             f = np.resize(np.arange(self.lastF, newF, self.df), n)
             
-            # print("newt ", newT)
-            # print(self.dt)
-            # print("newf ", newF)
-            # print(self.df)
-            # print("---")
-            
-            # print("len n ", n)
-            # print("len t ", len(t))
-            # print("len f ", len(f))
-            
-            #for i in range(0, n):
-                #output_items[0][i] = np.cos(2*np.pi*f[i]*t[i]) + 1j*np.sin(2*np.pi*f[i]*t[i]) 
-                
-                #output_items[0][i] = np.exp(1j*2*np.pi*f[i]*t[i])
-            
+            # Output is a complex exponential (I/Q)
             output_items[0][:] = np.exp(1j*2*np.pi*f*t)
             
+            # Update bookmarks
             self.lastT = newT
             self.lastF = newF
-            
+        
+        # Otherwise do nothing
         else:
             output_items[0][:] = input_items[0] * 0;
             if self.debug:

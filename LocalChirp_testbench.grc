@@ -33,6 +33,18 @@ options:
     state: enabled
 
 blocks:
+- name: decimation
+  id: variable
+  parameters:
+    comment: ''
+    value: '1000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [424, 28.0]
+    rotation: 0
+    state: enabled
 - name: fftsz
   id: variable
   parameters:
@@ -42,56 +54,14 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [904, 52.0]
-    rotation: 0
-    state: enabled
-- name: freq
-  id: variable_qtgui_range
-  parameters:
-    comment: ''
-    gui_hint: ''
-    label: Frequency
-    min_len: '200'
-    orient: QtCore.Qt.Horizontal
-    rangeType: float
-    start: '0'
-    step: '100'
-    stop: samp_rate/2
-    value: 1e3
-    widget: counter_slider
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [432, 16.0]
-    rotation: 0
-    state: enabled
-- name: movavg_length
-  id: variable_qtgui_range
-  parameters:
-    comment: ''
-    gui_hint: ''
-    label: Moving Average Length
-    min_len: '200'
-    orient: QtCore.Qt.Horizontal
-    rangeType: float
-    start: '1000'
-    step: '1'
-    stop: '16383'
-    value: '10000'
-    widget: counter_slider
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [632, 16.0]
+    coordinate: [592, 28.0]
     rotation: 0
     state: enabled
 - name: samp_rate
   id: variable
   parameters:
     comment: ''
-    value: 900e3
+    value: 1e6
   states:
     bus_sink: false
     bus_source: false
@@ -121,8 +91,8 @@ blocks:
     coordinate: [64, 248.0]
     rotation: 0
     state: enabled
-- name: blocks_multiply_xx_0
-  id: blocks_multiply_xx
+- name: blocks_add_xx_0
+  id: blocks_add_xx
   parameters:
     affinity: ''
     alias: ''
@@ -136,9 +106,25 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1384, 468.0]
+    coordinate: [1528, 356.0]
     rotation: 0
     state: disabled
+- name: blocks_multiply_conjugate_cc_0
+  id: blocks_multiply_conjugate_cc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1376, 540.0]
+    rotation: 0
+    state: true
 - name: blocks_throttle_0
   id: blocks_throttle
   parameters:
@@ -161,62 +147,53 @@ blocks:
 - name: epy_block_1
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
-      \ GRC will instantiate the first class it finds\nto get ports and parameters\
-      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
-      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      import pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):  # other\
-      \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
-      \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
-      \ slope=100e3, samp_rate=200e6/12, offset = 10e3):  # only default arguments\
-      \ here\n        \"\"\"arguments to this function show up as parameters in GRC\"\
-      \"\"\n        gr.sync_block.__init__(\n            self,\n            name='Local\
-      \ Chirp Test',   # will show up in GRC\n            in_sig=[np.complex64],\n\
-      \            out_sig=[np.complex64]\n        )\n        # if an attribute with\
-      \ the same name as a parameter is found,\n        # a callback is registered\
-      \ (properties work, too).\n        self.slope = slope  \n        self.fs = samp_rate\n\
-      \        self.offset = offset\n        self.debug = False\n        \n      \
-      \  self.lastT = 0\n        self.lastF = -self.fs/2 + self.offset\n        self.spanF\
-      \ = self.lastF + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n    \
-      \    self.df = self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to\
-      \ be\n        # over 2 has something to do with span of f not being -fs/2 to\
-      \ fs/2 but\n        # just fs..???\n        \n        \n        self.controlPortName\
-      \ = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 3/27/23\n\n\
+      Generates a local tone that sweeps the spectrum at the specified slope\n\n\"\
+      \"\"\n\nimport numpy as np\nimport pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):\
+      \  \n\n    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name='Local\
+      \ Chirp Test 1.0',   \n            in_sig=[np.complex64],\n            out_sig=[np.complex64]\n\
+      \        )\n\n        self.slope = slope  \n        self.fs = samp_rate\n  \
+      \      self.offset = offset\n        self.debug = False\n        \n        self.lastT\
+      \ = 0\n        self.lastF = -self.fs/2 + self.offset\n        self.spanF = self.lastF\
+      \ + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n        self.df =\
+      \ self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to be\n       \
+      \ # over 2 has something to do with span of f not being -fs/2 to fs/2 but\n\
+      \        # just fs..???\n        \n        \n        self.controlPortName =\
+      \ 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
-      \        self.control = False\n        \n    def handle_msg(self, msg):\n  \
-      \      controlIn = pmt.to_bool(msg)\n        \n        if controlIn > self.controlLast+self.trigger_Power:\n\
-      \            self.control = True\n        \n        self.controlLast = controlIn\n\
-      \        \n    def work(self, input_items, output_items):\n        n = len(input_items[0])\
-      \ \n    \n        \n        \n        \n        if self.lastF <= self.offset/2:\n\
-      \            newT = self.dt*n + self.lastT\n            newF = self.df*n + self.lastF\n\
-      \                \n            t = np.resize(np.arange(self.lastT, newT, self.dt),\
-      \ n)\n            f = np.resize(np.arange(self.lastF, newF, self.df), n)\n \
-      \           \n            # print(\"newt \", newT)\n            # print(self.dt)\n\
-      \            # print(\"newf \", newF)\n            # print(self.df)\n      \
-      \      # print(\"---\")\n            \n            # print(\"len n \", n)\n\
-      \            # print(\"len t \", len(t))\n            # print(\"len f \", len(f))\n\
-      \            \n            #for i in range(0, n):\n                #output_items[0][i]\
-      \ = np.cos(2*np.pi*f[i]*t[i]) + 1j*np.sin(2*np.pi*f[i]*t[i]) \n            \
-      \    \n                #output_items[0][i] = np.exp(1j*2*np.pi*f[i]*t[i])\n\
-      \            \n            output_items[0][:] = np.exp(1j*2*np.pi*f*t)\n   \
-      \         \n            self.lastT = newT\n            self.lastF = newF\n \
-      \           \n        else:\n            output_items[0][:] = input_items[0]\
-      \ * 0;\n            if self.debug:\n                self.debug = False\n   \
-      \             raise ValueError(self.lastF)\n            \n        \n       \
-      \ return len(output_items[0])\n"
+      \        self.control = False\n        \n            \n        \n    def handle_msg(self,\
+      \ msg):\n        controlIn = pmt.to_bool(msg)\n        \n        if controlIn\
+      \ > self.controlLast+self.trigger_Power:\n            self.control = True\n\
+      \        \n        self.controlLast = controlIn\n        \n    def work(self,\
+      \ input_items, output_items):\n    \n        # Find number of samples on this\
+      \ call\n        n = len(input_items[0]) \n\n        # If we havent progged the\
+      \ whole spectrum\n        if self.lastF <= self.offset/2: # WHY OFFSET/2 ???????????\
+      \ IDK\n        \n            # Calculate the values of T and F we prog to on\
+      \ this call\n            newT = self.dt*n + self.lastT\n            newF = self.df*n\
+      \ + self.lastF\n            \n            # Make sure arrays are correct size.\
+      \ Can get slightly offsize due\n            # to float precision errors\n  \
+      \          t = np.resize(np.arange(self.lastT, newT, self.dt), n)\n        \
+      \    f = np.resize(np.arange(self.lastF, newF, self.df), n)\n            \n\
+      \            # Output is a complex exponential (I/Q)\n            output_items[0][:]\
+      \ = np.exp(1j*2*np.pi*f*t)\n            \n            # Update bookmarks\n \
+      \           self.lastT = newT\n            self.lastF = newF\n        \n   \
+      \     # Otherwise do nothing\n        else:\n            output_items[0][:]\
+      \ = input_items[0] * 0;\n            if self.debug:\n                self.debug\
+      \ = False\n                raise ValueError(self.lastF)\n            \n    \
+      \    \n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: 800e3
+    offset: '300'
     samp_rate: samp_rate
     slope: 100e3
   states:
-    _io_cache: ('Local Chirp Test', 'blk', [('slope', '100000.0'), ('samp_rate', '16666666.666666666'),
-      ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn', 'message', 1)],
-      [('0', 'complex', 1)], 'Embedded Python Block example - a simple multiply const',
-      ['offset', 'slope'])
+    _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
+      '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
+      'message', 1)], [('0', 'complex', 1)], '', ['offset', 'slope'])
     bus_sink: false
     bus_source: false
     bus_structure: null
@@ -226,72 +203,81 @@ blocks:
 - name: epy_block_1_0
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
-      \ GRC will instantiate the first class it finds\nto get ports and parameters\
-      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
-      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      import pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):  # other\
-      \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
-      \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
-      \ slope=100e3, samp_rate=200e6/12):  # only default arguments here\n       \
-      \ \"\"\"arguments to this function show up as parameters in GRC\"\"\"\n    \
-      \    gr.sync_block.__init__(\n            self,\n            name='Local Chirp\
-      \ Test',   # will show up in GRC\n            in_sig=[np.complex64],\n     \
-      \       out_sig=[np.complex64]\n        )\n        # if an attribute with the\
-      \ same name as a parameter is found,\n        # a callback is registered (properties\
-      \ work, too).\n        self.slope = slope  \n        self.fs = samp_rate\n \
-      \       self.sample_count = 0\n        \n        self.lastT = 0\n        self.lastF\
-      \ = -self.fs/2\n        self.dt = 1/self.fs\n        self.df = self.slope/self.fs/2\
-      \ #why /2 ?? I have no idea, but it has to be\n        \n        self.controlPortName\
-      \ = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 3/27/23\n\n\
+      Generates a local tone that sweeps the spectrum at the specified slope\n\n\"\
+      \"\"\n\nimport numpy as np\nimport pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):\
+      \  \n\n    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name='Local\
+      \ Chirp Test 1.0',   \n            in_sig=[np.complex64],\n            out_sig=[np.complex64]\n\
+      \        )\n\n        self.slope = slope  \n        self.fs = samp_rate\n  \
+      \      self.offset = offset\n        self.debug = False\n        \n        self.lastT\
+      \ = 0\n        self.lastF = -self.fs/2 + self.offset\n        self.spanF = self.lastF\
+      \ + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n        self.df =\
+      \ self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to be\n       \
+      \ # over 2 has something to do with span of f not being -fs/2 to fs/2 but\n\
+      \        # just fs..???\n        \n        \n        self.controlPortName =\
+      \ 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
-      \        self.control = False\n        \n    def handle_msg(self, msg):\n  \
-      \      controlIn = pmt.to_bool(msg)\n        \n        if controlIn > self.controlLast+self.trigger_Power:\n\
-      \            self.control = True\n        \n        self.controlLast = controlIn\n\
-      \        \n    def work(self, input_items, output_items):\n        n = len(input_items[0])\
-      \ \n    \n        if self.lastT <= self.fs/self.slope:\n            newT = self.dt*n\
-      \ + self.lastT\n            newF = self.df*n + self.lastF\n                \n\
-      \            t = np.resize(np.arange(self.lastT, newT, self.dt), n)\n      \
-      \      f = np.resize(np.arange(self.lastF, newF, self.df), n)\n            \n\
-      \            # print(\"newt \", newT)\n            # print(self.dt)\n      \
-      \      # print(\"newf \", newF)\n            # print(self.df)\n            #\
-      \ print(\"---\")\n            \n            # print(\"len n \", n)\n       \
-      \     # print(\"len t \", len(t))\n            # print(\"len f \", len(f))\n\
-      \            \n            #for i in range(0, n):\n                #output_items[0][i]\
-      \ = np.cos(2*np.pi*f[i]*t[i]) + 1j*np.sin(2*np.pi*f[i]*t[i]) \n            \
-      \    \n                #output_items[0][i] = np.exp(1j*2*np.pi*f[i]*t[i])\n\
-      \            \n            output_items[0][:] = np.exp(1j*2*np.pi*f*t)\n   \
-      \         \n            self.lastT = newT\n            self.lastF = newF\n \
-      \           \n        else:\n            output_items[0][:] = input_items[0]\
-      \ * 0;\n        \n        return len(output_items[0])\n"
+      \        self.control = False\n        \n            \n        \n    def handle_msg(self,\
+      \ msg):\n        controlIn = pmt.to_bool(msg)\n        \n        if controlIn\
+      \ > self.controlLast+self.trigger_Power:\n            self.control = True\n\
+      \        \n        self.controlLast = controlIn\n        \n    def work(self,\
+      \ input_items, output_items):\n    \n        # Find number of samples on this\
+      \ call\n        n = len(input_items[0]) \n\n        # If we havent progged the\
+      \ whole spectrum\n        if self.lastF <= self.offset/2: # WHY OFFSET/2 ???????????\
+      \ IDK\n        \n            # Calculate the values of T and F we prog to on\
+      \ this call\n            newT = self.dt*n + self.lastT\n            newF = self.df*n\
+      \ + self.lastF\n            \n            # Make sure arrays are correct size.\
+      \ Can get slightly offsize due\n            # to float precision errors\n  \
+      \          t = np.resize(np.arange(self.lastT, newT, self.dt), n)\n        \
+      \    f = np.resize(np.arange(self.lastF, newF, self.df), n)\n            \n\
+      \            # Output is a complex exponential (I/Q)\n            output_items[0][:]\
+      \ = np.exp(1j*2*np.pi*f*t)\n            \n            # Update bookmarks\n \
+      \           self.lastT = newT\n            self.lastF = newF\n        \n   \
+      \     # Otherwise do nothing\n        else:\n            output_items[0][:]\
+      \ = input_items[0] * 0;\n            if self.debug:\n                self.debug\
+      \ = False\n                raise ValueError(self.lastF)\n            \n    \
+      \    \n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
+    offset: '0'
     samp_rate: samp_rate
-    slope: 101e3
+    slope: 100e3
   states:
-    _io_cache: ('Local Chirp Test', 'blk', [('slope', '100000.0'), ('samp_rate', '16666666.666666666')],
-      [('0', 'complex', 1), ('controlIn', 'message', 1)], [('0', 'complex', 1)], 'Embedded
-      Python Block example - a simple multiply const', ['slope'])
+    _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
+      '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
+      'message', 1)], [('0', 'complex', 1)], '', ['offset', 'slope'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [912, 516.0]
+    coordinate: [912, 488.0]
     rotation: 0
-    state: disabled
-- name: import_0
-  id: import
+    state: true
+- name: filter_fft_low_pass_filter_0
+  id: filter_fft_low_pass_filter
   parameters:
+    affinity: ''
     alias: ''
+    beta: '6.76'
     comment: ''
-    imports: import math
+    cutoff_freq: 10e3
+    decim: decimation
+    gain: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nthreads: '1'
+    samp_rate: samp_rate
+    type: ccc
+    width: 10e3
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1064, 60.0]
+    coordinate: [1824, 620.0]
     rotation: 0
     state: true
 - name: qtgui_waterfall_sink_x_0
@@ -342,27 +328,92 @@ blocks:
     legend: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    name: '""'
+    name: '"Raw"'
     nconnections: '1'
     showports: 'False'
     type: complex
-    update_time: '0.10'
+    update_time: '0.1'
     wintype: window.WIN_BLACKMAN_hARRIS
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1608, 296.0]
+    coordinate: [1904, 304.0]
+    rotation: 0
+    state: true
+- name: qtgui_waterfall_sink_x_1
+  id: qtgui_waterfall_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    axislabels: 'True'
+    bw: samp_rate/decimation
+    color1: '0'
+    color10: '0'
+    color2: '0'
+    color3: '0'
+    color4: '0'
+    color5: '0'
+    color6: '0'
+    color7: '0'
+    color8: '0'
+    color9: '0'
+    comment: ''
+    fc: '0'
+    fftsize: '128'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: ''
+    int_max: '10'
+    int_min: '-140'
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Filtered"'
+    nconnections: '1'
+    showports: 'False'
+    type: complex
+    update_time: decimation/samp_rate/128
+    wintype: window.WIN_BLACKMAN_hARRIS
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2176, 672.0]
     rotation: 0
     state: true
 
 connections:
 - [analog_sig_source_x_0, '0', blocks_throttle_0, '0']
+- [blocks_add_xx_0, '0', qtgui_waterfall_sink_x_0, '0']
+- [blocks_multiply_conjugate_cc_0, '0', filter_fft_low_pass_filter_0, '0']
+- [blocks_multiply_conjugate_cc_0, '0', qtgui_waterfall_sink_x_0, '0']
 - [blocks_throttle_0, '0', epy_block_1, '0']
 - [blocks_throttle_0, '0', epy_block_1_0, '0']
-- [epy_block_1, '0', blocks_multiply_xx_0, '0']
-- [epy_block_1, '0', qtgui_waterfall_sink_x_0, '0']
-- [epy_block_1_0, '0', blocks_multiply_xx_0, '1']
+- [epy_block_1, '0', blocks_add_xx_0, '0']
+- [epy_block_1, '0', blocks_multiply_conjugate_cc_0, '0']
+- [epy_block_1_0, '0', blocks_multiply_conjugate_cc_0, '1']
+- [filter_fft_low_pass_filter_0, '0', qtgui_waterfall_sink_x_1, '0']
 
 metadata:
   file_format: 1
