@@ -99,29 +99,6 @@ blocks:
     coordinate: [272, 28.0]
     rotation: 0
     state: enabled
-- name: variable_qtgui_toggle_button_msg_0
-  id: variable_qtgui_toggle_button_msg
-  parameters:
-    comment: ''
-    gui_hint: ''
-    initPressed: 'False'
-    label: ''
-    outputmsgname: value
-    pressBackgroundColor: default
-    pressFontColor: default
-    pressed: '1'
-    relBackgroundColor: default
-    relFontColor: default
-    released: '0'
-    type: bool
-    value: '0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [400, 620.0]
-    rotation: 0
-    state: true
 - name: analog_sig_source_x_0
   id: analog_sig_source_x
   parameters:
@@ -144,6 +121,24 @@ blocks:
     coordinate: [64, 248.0]
     rotation: 0
     state: enabled
+- name: blocks_multiply_xx_0
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1384, 468.0]
+    rotation: 0
+    state: disabled
 - name: blocks_throttle_0
   id: blocks_throttle
   parameters:
@@ -173,36 +168,109 @@ blocks:
       import pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):  # other\
       \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
       \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
+      \ slope=100e3, samp_rate=200e6/12, offset = 10e3):  # only default arguments\
+      \ here\n        \"\"\"arguments to this function show up as parameters in GRC\"\
+      \"\"\n        gr.sync_block.__init__(\n            self,\n            name='Local\
+      \ Chirp Test',   # will show up in GRC\n            in_sig=[np.complex64],\n\
+      \            out_sig=[np.complex64]\n        )\n        # if an attribute with\
+      \ the same name as a parameter is found,\n        # a callback is registered\
+      \ (properties work, too).\n        self.slope = slope  \n        self.fs = samp_rate\n\
+      \        self.offset = offset\n        self.debug = False\n        \n      \
+      \  self.lastT = 0\n        self.lastF = -self.fs/2 + self.offset\n        self.spanF\
+      \ = self.lastF + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n    \
+      \    self.df = self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to\
+      \ be\n        # over 2 has something to do with span of f not being -fs/2 to\
+      \ fs/2 but\n        # just fs..???\n        \n        \n        self.controlPortName\
+      \ = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+      \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
+      \        self.control = False\n        \n    def handle_msg(self, msg):\n  \
+      \      controlIn = pmt.to_bool(msg)\n        \n        if controlIn > self.controlLast+self.trigger_Power:\n\
+      \            self.control = True\n        \n        self.controlLast = controlIn\n\
+      \        \n    def work(self, input_items, output_items):\n        n = len(input_items[0])\
+      \ \n    \n        \n        \n        \n        if self.lastF <= self.offset/2:\n\
+      \            newT = self.dt*n + self.lastT\n            newF = self.df*n + self.lastF\n\
+      \                \n            t = np.resize(np.arange(self.lastT, newT, self.dt),\
+      \ n)\n            f = np.resize(np.arange(self.lastF, newF, self.df), n)\n \
+      \           \n            # print(\"newt \", newT)\n            # print(self.dt)\n\
+      \            # print(\"newf \", newF)\n            # print(self.df)\n      \
+      \      # print(\"---\")\n            \n            # print(\"len n \", n)\n\
+      \            # print(\"len t \", len(t))\n            # print(\"len f \", len(f))\n\
+      \            \n            #for i in range(0, n):\n                #output_items[0][i]\
+      \ = np.cos(2*np.pi*f[i]*t[i]) + 1j*np.sin(2*np.pi*f[i]*t[i]) \n            \
+      \    \n                #output_items[0][i] = np.exp(1j*2*np.pi*f[i]*t[i])\n\
+      \            \n            output_items[0][:] = np.exp(1j*2*np.pi*f*t)\n   \
+      \         \n            self.lastT = newT\n            self.lastF = newF\n \
+      \           \n        else:\n            output_items[0][:] = input_items[0]\
+      \ * 0;\n            if self.debug:\n                self.debug = False\n   \
+      \             raise ValueError(self.lastF)\n            \n        \n       \
+      \ return len(output_items[0])\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: 800e3
+    samp_rate: samp_rate
+    slope: 100e3
+  states:
+    _io_cache: ('Local Chirp Test', 'blk', [('slope', '100000.0'), ('samp_rate', '16666666.666666666'),
+      ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn', 'message', 1)],
+      [('0', 'complex', 1)], 'Embedded Python Block example - a simple multiply const',
+      ['offset', 'slope'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [912, 292.0]
+    rotation: 0
+    state: true
+- name: epy_block_1_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      import pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):  # other\
+      \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
+      \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
       \ slope=100e3, samp_rate=200e6/12):  # only default arguments here\n       \
       \ \"\"\"arguments to this function show up as parameters in GRC\"\"\"\n    \
       \    gr.sync_block.__init__(\n            self,\n            name='Local Chirp\
       \ Test',   # will show up in GRC\n            in_sig=[np.complex64],\n     \
       \       out_sig=[np.complex64]\n        )\n        # if an attribute with the\
       \ same name as a parameter is found,\n        # a callback is registered (properties\
-      \ work, too).\n        self.slope = slope\n        self.fs = samp_rate\n   \
-      \     self.sample_count = 0\n        \n        self.lastT = 0\n        self.lastF\
-      \ = -400e3\n        self.dt = 1/self.fs\n        self.df = self.slope/self.fs\n\
-      \        \n        self.controlPortName = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+      \ work, too).\n        self.slope = slope  \n        self.fs = samp_rate\n \
+      \       self.sample_count = 0\n        \n        self.lastT = 0\n        self.lastF\
+      \ = -self.fs/2\n        self.dt = 1/self.fs\n        self.df = self.slope/self.fs/2\
+      \ #why /2 ?? I have no idea, but it has to be\n        \n        self.controlPortName\
+      \ = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
       \        self.control = False\n        \n    def handle_msg(self, msg):\n  \
       \      controlIn = pmt.to_bool(msg)\n        \n        if controlIn > self.controlLast+self.trigger_Power:\n\
       \            self.control = True\n        \n        self.controlLast = controlIn\n\
       \        \n    def work(self, input_items, output_items):\n        n = len(input_items[0])\
-      \ \n    \n        if self.lastT <= 4 & self.control:\n            newT = self.dt*n\
+      \ \n    \n        if self.lastT <= self.fs/self.slope:\n            newT = self.dt*n\
       \ + self.lastT\n            newF = self.df*n + self.lastF\n                \n\
-      \            t = np.arange(self.lastT, newT+self.dt, self.dt)\n            f\
-      \ = np.arange(self.lastF, newF+self.df, self.df)\n            \n           \
-      \ for i in range(0, n):\n                output_items[0][i] = np.cos(2*np.pi*f[i]*t[i])\
-      \ + 1j*np.sin(2*np.pi*f[i]*t[i]) \n            \n            self.lastT = newT\n\
-      \            self.lastF = newF\n            \n        else:\n            output_items[0][:]\
-      \ = input_items[0] * 0;\n        \n        return len(output_items[0])\n"
+      \            t = np.resize(np.arange(self.lastT, newT, self.dt), n)\n      \
+      \      f = np.resize(np.arange(self.lastF, newF, self.df), n)\n            \n\
+      \            # print(\"newt \", newT)\n            # print(self.dt)\n      \
+      \      # print(\"newf \", newF)\n            # print(self.df)\n            #\
+      \ print(\"---\")\n            \n            # print(\"len n \", n)\n       \
+      \     # print(\"len t \", len(t))\n            # print(\"len f \", len(f))\n\
+      \            \n            #for i in range(0, n):\n                #output_items[0][i]\
+      \ = np.cos(2*np.pi*f[i]*t[i]) + 1j*np.sin(2*np.pi*f[i]*t[i]) \n            \
+      \    \n                #output_items[0][i] = np.exp(1j*2*np.pi*f[i]*t[i])\n\
+      \            \n            output_items[0][:] = np.exp(1j*2*np.pi*f*t)\n   \
+      \         \n            self.lastT = newT\n            self.lastF = newF\n \
+      \           \n        else:\n            output_items[0][:] = input_items[0]\
+      \ * 0;\n        \n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
     samp_rate: samp_rate
-    slope: 100e3
+    slope: 101e3
   states:
     _io_cache: ('Local Chirp Test', 'blk', [('slope', '100000.0'), ('samp_rate', '16666666.666666666')],
       [('0', 'complex', 1), ('controlIn', 'message', 1)], [('0', 'complex', 1)], 'Embedded
@@ -210,9 +278,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [912, 292.0]
+    coordinate: [912, 516.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: import_0
   id: import
   parameters:
@@ -276,23 +344,25 @@ blocks:
     minoutbuf: '0'
     name: '""'
     nconnections: '1'
-    showports: 'True'
+    showports: 'False'
     type: complex
-    update_time: '0.01'
+    update_time: '0.10'
     wintype: window.WIN_BLACKMAN_hARRIS
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1376, 280.0]
+    coordinate: [1608, 296.0]
     rotation: 0
     state: true
 
 connections:
 - [analog_sig_source_x_0, '0', blocks_throttle_0, '0']
 - [blocks_throttle_0, '0', epy_block_1, '0']
+- [blocks_throttle_0, '0', epy_block_1_0, '0']
+- [epy_block_1, '0', blocks_multiply_xx_0, '0']
 - [epy_block_1, '0', qtgui_waterfall_sink_x_0, '0']
-- [variable_qtgui_toggle_button_msg_0, state, epy_block_1, controlIn]
+- [epy_block_1_0, '0', blocks_multiply_xx_0, '1']
 
 metadata:
   file_format: 1

@@ -78,7 +78,6 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.variable_qtgui_toggle_button_msg_0 = variable_qtgui_toggle_button_msg_0 = 0
         self.samp_rate = samp_rate = 900e3
         self.movavg_length = movavg_length = 10000
         self.freq = freq = 1e3
@@ -87,13 +86,6 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
-        self._variable_qtgui_toggle_button_msg_0_choices = {'Pressed': bool(1), 'Released': bool(0)}
-
-        _variable_qtgui_toggle_button_msg_0_toggle_button = qtgui.ToggleButton(self.set_variable_qtgui_toggle_button_msg_0, 'variable_qtgui_toggle_button_msg_0', self._variable_qtgui_toggle_button_msg_0_choices, False, 'value')
-        _variable_qtgui_toggle_button_msg_0_toggle_button.setColors("default", "default", "default", "default")
-        self.variable_qtgui_toggle_button_msg_0 = _variable_qtgui_toggle_button_msg_0_toggle_button
-
-        self.top_layout.addWidget(_variable_qtgui_toggle_button_msg_0_toggle_button)
         self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
             1024, #size
             window.WIN_BLACKMAN_hARRIS, #wintype
@@ -103,7 +95,7 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
             1, #number of inputs
             None # parent
         )
-        self.qtgui_waterfall_sink_x_0.set_update_time(0.01)
+        self.qtgui_waterfall_sink_x_0.set_update_time(0.10)
         self.qtgui_waterfall_sink_x_0.enable_grid(False)
         self.qtgui_waterfall_sink_x_0.enable_axis_labels(True)
 
@@ -135,7 +127,7 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self._freq_range = Range(0, samp_rate/2, 100, 1e3, 200)
         self._freq_win = RangeWidget(self._freq_range, self.set_freq, "Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._freq_win)
-        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate)
+        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate, offset=800e3)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 500e3, 1, 0, 0)
 
@@ -143,7 +135,6 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.variable_qtgui_toggle_button_msg_0, 'state'), (self.epy_block_1, 'controlIn'))
         self.connect((self.analog_sig_source_x_0, 0), (self.blocks_throttle_0, 0))
         self.connect((self.blocks_throttle_0, 0), (self.epy_block_1, 0))
         self.connect((self.epy_block_1, 0), (self.qtgui_waterfall_sink_x_0, 0))
@@ -156,12 +147,6 @@ class Itrigger2_virtual(gr.top_block, Qt.QWidget):
         self.wait()
 
         event.accept()
-
-    def get_variable_qtgui_toggle_button_msg_0(self):
-        return self.variable_qtgui_toggle_button_msg_0
-
-    def set_variable_qtgui_toggle_button_msg_0(self, variable_qtgui_toggle_button_msg_0):
-        self.variable_qtgui_toggle_button_msg_0 = variable_qtgui_toggle_button_msg_0
 
     def get_samp_rate(self):
         return self.samp_rate

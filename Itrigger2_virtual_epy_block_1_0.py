@@ -14,7 +14,7 @@ from gnuradio import gr
 class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
     """Embedded Python Block example - a simple multiply const"""
 
-    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):  # only default arguments here
+    def __init__(self, slope=100e3, samp_rate=200e6/12):  # only default arguments here
         """arguments to this function show up as parameters in GRC"""
         gr.sync_block.__init__(
             self,
@@ -26,17 +26,12 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         # a callback is registered (properties work, too).
         self.slope = slope  
         self.fs = samp_rate
-        self.offset = offset
-        self.debug = False
+        self.sample_count = 0
         
         self.lastT = 0
-        self.lastF = -self.fs/2 + self.offset
-        self.spanF = self.lastF + self.fs/2 - self.offset
+        self.lastF = -self.fs/2
         self.dt = 1/self.fs
         self.df = self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to be
-        # over 2 has something to do with span of f not being -fs/2 to fs/2 but
-        # just fs..???
-        
         
         self.controlPortName = 'controlIn'
         self.message_port_register_in(pmt.intern(self.controlPortName))
@@ -54,10 +49,7 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
     def work(self, input_items, output_items):
         n = len(input_items[0]) 
     
-        
-        
-        
-        if self.lastF <= self.offset/2:
+        if self.lastT <= self.fs/self.slope:
             newT = self.dt*n + self.lastT
             newF = self.df*n + self.lastF
                 
@@ -86,9 +78,5 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
             
         else:
             output_items[0][:] = input_items[0] * 0;
-            if self.debug:
-                self.debug = False
-                raise ValueError(self.lastF)
-            
         
         return len(output_items[0])
