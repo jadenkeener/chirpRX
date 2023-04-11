@@ -42,7 +42,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [464, 28.0]
+    coordinate: [416, 28.0]
     rotation: 0
     state: enabled
 - name: fftsz
@@ -54,7 +54,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [624, 28.0]
+    coordinate: [560, 28.0]
     rotation: 0
     state: enabled
 - name: filt_cutoff
@@ -66,7 +66,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [752, 36.0]
+    coordinate: [704, 28.0]
     rotation: 0
     state: enabled
 - name: filt_transwidth
@@ -78,7 +78,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [864, 36.0]
+    coordinate: [864, 28.0]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -221,7 +221,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [904, 160.0]
+    coordinate: [832, 208.0]
     rotation: 0
     state: enabled
 - name: filter_fft_low_pass_filter_0
@@ -413,3 +413,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: 3.10.5.0
