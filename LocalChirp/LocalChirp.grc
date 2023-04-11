@@ -37,7 +37,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1000'
+    value: '6000'
   states:
     bus_sink: false
     bus_source: false
@@ -57,11 +57,35 @@ blocks:
     coordinate: [624, 28.0]
     rotation: 0
     state: enabled
+- name: filt_cutoff
+  id: variable
+  parameters:
+    comment: ''
+    value: samp_rate/decimation*0.8
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [752, 36.0]
+    rotation: 0
+    state: enabled
+- name: filt_transwidth
+  id: variable
+  parameters:
+    comment: ''
+    value: (samp_rate/decimation - filt_cutoff) *2
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [864, 36.0]
+    rotation: 0
+    state: enabled
 - name: samp_rate
   id: variable
   parameters:
     comment: ''
-    value: 200e6/12
+    value: 200e6/16
   states:
     bus_sink: false
     bus_source: false
@@ -76,7 +100,7 @@ blocks:
     alias: ''
     append: 'False'
     comment: ''
-    file: ''
+    file: ./LCgram4_220.chirp
     type: complex
     unbuffered: 'False'
     vlen: '1'
@@ -84,7 +108,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2208, 744.0]
+    coordinate: [2256, 404.0]
     rotation: 0
     state: true
 - name: blocks_file_source_0
@@ -94,7 +118,7 @@ blocks:
     alias: ''
     begin_tag: pmt.PMT_NIL
     comment: ''
-    file: C:\Users\Jaden\Desktop\chirpgit\sdrtest.raw
+    file: /home/chirp/Desktop/GQRX_Recordings/gqrx_20230411_001102_14250000_12500000_fc.raw
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -106,7 +130,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [72, 268.0]
+    coordinate: [72, 276.0]
     rotation: 0
     state: true
 - name: blocks_multiply_conjugate_cc_0
@@ -187,9 +211,9 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: 60e3
+    offset: 433.8e3
     samp_rate: samp_rate
-    slope: '81967'
+    slope: 100e3
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
       '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
@@ -207,7 +231,7 @@ blocks:
     alias: ''
     beta: '6.76'
     comment: ''
-    cutoff_freq: 100e3
+    cutoff_freq: filt_cutoff
     decim: decimation
     gain: '1'
     maxoutbuf: '0'
@@ -215,13 +239,13 @@ blocks:
     nthreads: '8'
     samp_rate: samp_rate
     type: ccc
-    width: 66e3
+    width: filt_transwidth
     win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1736, 556.0]
+    coordinate: [1896, 484.0]
     rotation: 0
     state: enabled
 - name: qtgui_sink_x_0
@@ -252,7 +276,7 @@ blocks:
     bus_structure: null
     coordinate: [896, 636.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: qtgui_waterfall_sink_x_0
   id: qtgui_waterfall_sink_x
   parameters:
@@ -372,7 +396,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2192, 596.0]
+    coordinate: [2240, 524.0]
     rotation: 0
     state: enabled
 
@@ -389,4 +413,3 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
