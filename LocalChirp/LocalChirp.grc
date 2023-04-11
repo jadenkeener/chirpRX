@@ -37,7 +37,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '100'
+    value: '1000'
   states:
     bus_sink: false
     bus_source: false
@@ -69,6 +69,24 @@ blocks:
     coordinate: [272, 28.0]
     rotation: 0
     state: enabled
+- name: blocks_file_sink_0
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: ''
+    type: complex
+    unbuffered: 'False'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2208, 744.0]
+    rotation: 0
+    state: true
 - name: blocks_file_source_0
   id: blocks_file_source
   parameters:
@@ -81,7 +99,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     offset: '0'
-    repeat: 'True'
+    repeat: 'False'
     type: complex
     vlen: '1'
   states:
@@ -169,9 +187,9 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: 100e3
+    offset: 60e3
     samp_rate: samp_rate
-    slope: '81367'
+    slope: '81967'
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
       '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
@@ -203,7 +221,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1896, 484.0]
+    coordinate: [1736, 556.0]
     rotation: 0
     state: enabled
 - name: qtgui_sink_x_0
@@ -354,7 +372,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2240, 524.0]
+    coordinate: [2192, 596.0]
     rotation: 0
     state: enabled
 
@@ -366,6 +384,7 @@ connections:
 - [blocks_throttle_0, '0', epy_block_1, '0']
 - [blocks_throttle_0, '0', qtgui_sink_x_0, '0']
 - [epy_block_1, '0', blocks_multiply_conjugate_cc_0, '0']
+- [filter_fft_low_pass_filter_0, '0', blocks_file_sink_0, '0']
 - [filter_fft_low_pass_filter_0, '0', qtgui_waterfall_sink_x_1, '0']
 
 metadata:
