@@ -1,6 +1,6 @@
 options:
   parameters:
-    author: Jaden Keener
+    author: ''
     catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: trigger_sdr
+    id: Itrigger2_sdr
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -22,7 +22,7 @@ options:
     run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: trigger_sdr
+    title: Trigger SDR
     window_size: (1000,1000)
   states:
     bus_sink: false
@@ -51,7 +51,28 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [888, 16.0]
+    coordinate: [680, 8.0]
+    rotation: 0
+    state: true
+- name: movavg_length
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: Moving Average Length
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '1000'
+    step: '1'
+    stop: '16383'
+    value: '10000'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [872, 8.0]
     rotation: 0
     state: true
 - name: samp_rate
@@ -84,28 +105,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [424, 16.0]
-    rotation: 0
-    state: true
-- name: trig_power
-  id: variable_qtgui_range
-  parameters:
-    comment: ''
-    gui_hint: ''
-    label: Trigger Power
-    min_len: '200'
-    orient: QtCore.Qt.Horizontal
-    rangeType: float
-    start: '0'
-    step: '1'
-    stop: '100'
-    value: '1'
-    widget: counter_slider
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [664, 16.0]
+    coordinate: [448, 8.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0
@@ -117,9 +117,9 @@ blocks:
     comment: ''
     decim: '1'
     gain: '1'
-    high_cutoff_freq: trig_freq+filter_width
+    high_cutoff_freq: '6000'
     interp: '1'
-    low_cutoff_freq: trig_freq-filter_width
+    low_cutoff_freq: '3999'
     maxoutbuf: '0'
     minoutbuf: '0'
     samp_rate: samp_rate
@@ -130,7 +130,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [768, 340.0]
+    coordinate: [800, 340.0]
     rotation: 0
     state: true
 - name: blocks_complex_to_mag_squared_0
@@ -146,67 +146,111 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1096, 424.0]
+    coordinate: [1136, 344.0]
+    rotation: 0
+    state: true
+- name: blocks_moving_average_xx_0
+  id: blocks_moving_average_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    length: movavg_length
+    max_iter: '4000'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    scale: 1/movavg_length
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1568, 676.0]
+    rotation: 0
+    state: true
+- name: blocks_nlog10_ff_0
+  id: blocks_nlog10_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    k: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: '10'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1416, 452.0]
     rotation: 0
     state: true
 - name: epy_block_1
   id: epy_block
   parameters:
     _source_code: "\"\"\" Ionosonde Trigger Block\n    By Jaden Keener, 2/5/23\n \
-      \   \n    Last updated 2/5/23 19:42\n    \n    This block records the raw SDR\
-      \ output when a strong enough input is \n    provided. This block is meant to\
-      \ be used alongside a filter. The filter \n    should bandpass the trigger frequency,\
-      \ then go to an average power block\n    which then feeds into this blocks first\
-      \ input.\n    \n    Outputs are purely debug.\n    \n    See __init__ for additional\
+      \   \n    Last updated 2/12/23 2:41\n    - Added moving average functionality.\
+      \ Now we shouldn't have to manually set\n      trigger threshold\n    - TRYING\
+      \ TO FIX WINODW\n    \n    This block records the raw SDR output when a strong\
+      \ enough input is \n    provided. This block is meant to be used alongside a\
+      \ filter. The filter \n    should bandpass the trigger frequency, then go to\
+      \ an average power block\n    which then feeds into this blocks first input.\n\
+      \    \n    Outputs are purely debug.\n    \n    See __init__ for additional\
       \ i/o information\n\"\"\"\n\nimport numpy as np\nimport datetime\nfrom gnuradio\
-      \ import gr\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, trigger_Power=0.5,\
+      \ import gr\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, trigger_delta_dB=5,\
       \ samp_rate = 32E3, capture_window = 5): \n        \n        \"\"\" INPUTS/OUTPUTS:\n\
       \                input[0]: Signal average power\n                input[1]: Raw\
-      \ data from SDR\n                \n                output[0]: debug state information\n\
-      \                output[1]: debug timer information\n            \"\"\"\n  \
-      \      gr.sync_block.__init__(\n            self,\n            name='Ionosonde\
-      \ Trigger', \n            in_sig=[np.float32, np.complex64],\n            out_sig=[np.int8,\
-      \ np.float32]\n        )\n        \n        self.trigger_Power = trigger_Power\n\
+      \ data from SDR\n                input[2]: Moving average of [0]\n         \
+      \       \n                output[0]: debug state information\n             \
+      \   output[1]: debug timer information\n            \"\"\"\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='Ionosonde Trigger 2.0', \n           \
+      \ in_sig=[np.float32, np.complex64, np.float32],\n            out_sig=[np.float32,\
+      \ np.float32]\n        )\n        \n        self.trigger_Power = trigger_delta_dB\n\
       \        self.samp_rate = samp_rate\n        self.capture_window = capture_window\n\
       \        # timer max is calculated as sample rate * capture window in seconds.\n\
       \        self.timerMax = self.timer = self.samp_rate * self.capture_window\n\
       \        self.writing = False\n       \n\n    def work(self, input_items, output_items):\n\
-      \        \n        # Check if we are writing\n        if self.writing:\n   \
-      \         # If we are and we still have time on the clock\n            if self.timer\
-      \ < self.timerMax:\n                # Then write data to file\n            \
-      \    self.file.write(input_items[1][:])\n                self.timer += len(output_items[0])\n\
-      \                output_items[0][:] = 2\n            else:\n               \
-      \ # Otherwise close the file and reset flags\n                self.file.close()\n\
-      \                self.writing = False\n                output_items[0][:] =\
-      \ 0\n        \n        # If not writing, do we have high power on trigger?\n\
-      \        elif np.any(input_items[0] > self.trigger_Power):\n            # Set\
-      \ status variables\n            self.writing = True\n            self.timer\
-      \ = 0\n            output_items[0][:] = 1\n            \n            # Open\
-      \ new file and do first write\n            self.filename = '{date:%Y%m%d_%H%M%S}.chirp'.format(date=datetime.datetime.now())\n\
-      \            self.file = open(self.filename, \"ab\")\n            self.file.write(input_items[1][:])\n\
+      \        \n        self.power_movavg = input_items[2]\n        \n        # Check\
+      \ if we are writing\n        if self.writing:\n            # If we are and we\
+      \ still have time on the clock\n            if self.timer < self.timerMax:\n\
+      \                # Then write data to file\n                self.file.write(input_items[1][:])\n\
+      \                self.timer += len(input_items[1])\n                output_items[0][:]\
+      \ = 2\n            else:\n                # Otherwise close the file and reset\
+      \ flags\n                self.file.close()\n                self.writing = False\n\
+      \                output_items[0][:] = 0\n        \n        # If not writing,\
+      \ do we have high power on trigger?\n        elif np.any(input_items[0] > self.trigger_Power+self.power_movavg):\n\
+      \            # Set status variables\n            self.writing = True\n     \
+      \       self.timer = 0\n            output_items[0][:] = 1\n            \n \
+      \           # Open new file and do first write\n            self.filename =\
+      \ '{date:%Y%m%d_%H%M%S}.chirp'.format(date=datetime.datetime.now())\n      \
+      \      self.file = open(self.filename, \"ab\")\n            self.file.write(input_items[1][:])\n\
       \        # Show debug state of none\n        else:\n            output_items[0][:]\
       \ = 0\n        \n        # For debugging timer\n        output_items[1][:] =\
       \ self.timer\n        \n        # gnuradio needs this return\n        return\
       \ len(output_items[0])\n"
     affinity: ''
     alias: ''
-    capture_window: '180'
+    capture_window: '5'
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
     samp_rate: samp_rate
-    trigger_Power: trig_power
+    trigger_delta_dB: '5'
   states:
-    _io_cache: '(''Ionosonde Trigger'', ''blk'', [(''trigger_Power'', ''0.5''), (''samp_rate'',
-      ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'', 1), (''1'',
-      ''complex'', 1)], [(''0'', ''byte'', 1), (''1'', ''float'', 1)], '' INPUTS/OUTPUTS:\n                input[0]:
-      Signal average power\n                input[1]: Raw data from SDR\n                \n                output[0]:
-      debug state information\n                output[1]: debug timer information\n            '',
-      [''capture_window'', ''samp_rate'', ''trigger_Power''])'
+    _io_cache: '(''Ionosonde Trigger 2.0'', ''blk'', [(''trigger_delta_dB'', ''5''),
+      (''samp_rate'', ''32000.0''), (''capture_window'', ''5'')], [(''0'', ''float'',
+      1), (''1'', ''complex'', 1), (''2'', ''float'', 1)], [(''0'', ''float'', 1),
+      (''1'', ''float'', 1)], '' INPUTS/OUTPUTS:\n                input[0]: Signal
+      average power\n                input[1]: Raw data from SDR\n                input[2]:
+      Moving average of [0]\n                \n                output[0]: debug state
+      information\n                output[1]: debug timer information\n            '',
+      [''capture_window'', ''samp_rate''])'
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1288, 644.0]
+    coordinate: [1872, 464.0]
     rotation: 0
     state: enabled
 - name: qtgui_number_sink_0
@@ -249,8 +293,8 @@ blocks:
     label7: ''
     label8: ''
     label9: ''
-    max: '10'
-    min: '0'
+    max: '2'
+    min: '-1'
     name: '"Power"'
     nconnections: '1'
     type: float
@@ -269,7 +313,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1448, 372.0]
+    coordinate: [1568, 212.0]
     rotation: 0
     state: true
 - name: qtgui_number_sink_1
@@ -312,11 +356,11 @@ blocks:
     label7: ''
     label8: ''
     label9: ''
-    max: '2'
-    min: '0'
-    name: '"Trigger State"'
+    max: '3'
+    min: '-1'
+    name: '"TrigOut"'
     nconnections: '1'
-    type: byte
+    type: float
     unit1: ''
     unit10: ''
     unit2: ''
@@ -332,7 +376,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1672, 628.0]
+    coordinate: [2288, 364.0]
     rotation: 0
     state: enabled
 - name: qtgui_number_sink_1_1
@@ -395,9 +439,72 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1680, 780.0]
+    coordinate: [2288, 508.0]
     rotation: 0
     state: enabled
+- name: qtgui_number_sink_2
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'True'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_HORIZ
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '1'
+    min: '-1'
+    name: '"Moving Average"'
+    nconnections: '1'
+    type: float
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1992, 804.0]
+    rotation: 0
+    state: true
 - name: qtgui_waterfall_sink_x_0
   id: qtgui_waterfall_sink_x
   parameters:
@@ -426,13 +533,13 @@ blocks:
     color8: '0'
     color9: '0'
     comment: ''
-    fc: '0'
+    fc: 17.5E6
     fftsize: '1024'
     freqhalf: 'True'
     grid: 'False'
     gui_hint: ''
-    int_max: '10'
-    int_min: '-140'
+    int_max: '0'
+    int_min: '-100'
     label1: ''
     label10: ''
     label2: ''
@@ -456,7 +563,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [712, 880.0]
+    coordinate: [384, 936.0]
     rotation: 0
     state: true
 - name: uhd_usrp_source_0
@@ -496,7 +603,7 @@ blocks:
     ant7: '"RX2"'
     ant8: '"RX2"'
     ant9: '"RX2"'
-    bw0: '0'
+    bw0: samp_rate
     bw1: '0'
     bw10: '0'
     bw11: '0'
@@ -528,7 +635,7 @@ blocks:
     bw7: '0'
     bw8: '0'
     bw9: '0'
-    center_freq0: '0'
+    center_freq0: 17.5E6
     center_freq1: '0'
     center_freq10: '0'
     center_freq11: '0'
@@ -636,7 +743,7 @@ blocks:
     dc_offs_enb9: default
     dev_addr: '""'
     dev_args: ''
-    gain0: '0'
+    gain0: '50'
     gain1: '0'
     gain10: '0'
     gain11: '0'
@@ -892,19 +999,63 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [208, 352.0]
+    coordinate: [184, 292.0]
+    rotation: 0
+    state: true
+- name: virtual_sink_0
+  id: virtual_sink
+  parameters:
+    alias: ''
+    comment: ''
+    stream_id: signal
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 244.0]
+    rotation: 0
+    state: true
+- name: virtual_source_0
+  id: virtual_source
+  parameters:
+    alias: ''
+    comment: ''
+    stream_id: signal
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1608, 500.0]
+    rotation: 0
+    state: true
+- name: virtual_source_0_0
+  id: virtual_source
+  parameters:
+    alias: ''
+    comment: ''
+    stream_id: signal
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [104, 956.0]
     rotation: 0
     state: true
 
 connections:
 - [band_pass_filter_0, '0', blocks_complex_to_mag_squared_0, '0']
-- [blocks_complex_to_mag_squared_0, '0', epy_block_1, '0']
-- [blocks_complex_to_mag_squared_0, '0', qtgui_number_sink_0, '0']
+- [blocks_complex_to_mag_squared_0, '0', blocks_nlog10_ff_0, '0']
+- [blocks_moving_average_xx_0, '0', epy_block_1, '2']
+- [blocks_moving_average_xx_0, '0', qtgui_number_sink_2, '0']
+- [blocks_nlog10_ff_0, '0', blocks_moving_average_xx_0, '0']
+- [blocks_nlog10_ff_0, '0', epy_block_1, '0']
+- [blocks_nlog10_ff_0, '0', qtgui_number_sink_0, '0']
 - [epy_block_1, '0', qtgui_number_sink_1, '0']
 - [epy_block_1, '1', qtgui_number_sink_1_1, '0']
 - [uhd_usrp_source_0, '0', band_pass_filter_0, '0']
-- [uhd_usrp_source_0, '0', epy_block_1, '1']
-- [uhd_usrp_source_0, '0', qtgui_waterfall_sink_x_0, '0']
+- [uhd_usrp_source_0, '0', virtual_sink_0, '0']
+- [virtual_source_0, '0', epy_block_1, '1']
+- [virtual_source_0_0, '0', qtgui_waterfall_sink_x_0, '0']
 
 metadata:
   file_format: 1
