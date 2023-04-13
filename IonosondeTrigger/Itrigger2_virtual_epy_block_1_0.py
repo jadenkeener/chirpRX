@@ -35,7 +35,7 @@ class blk(gr.sync_block):
         gr.sync_block.__init__(
             self,
             name='Ionosonde Trigger 2.0', 
-            in_sig=[np.complex64],
+            in_sig=[np.complex64, np.float32, np.float32],
             out_sig=[np.float32, np.float32]
         )
         
@@ -47,9 +47,9 @@ class blk(gr.sync_block):
         self.writing = False
         
         # Message Handling
-        self.controlPortName = 'controlIn'
-        self.message_port_register_in(pmt.intern(self.controlPortName))
-        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)
+        #self.controlPortName = 'controlIn'
+        #self.message_port_register_in(pmt.intern(self.controlPortName))
+        #self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)
        
         self.control = False # default for control
         self.controlLast = 10e3
@@ -81,8 +81,9 @@ class blk(gr.sync_block):
                 output_items[0][:] = 0
         
         # If not writing, do we have high power on trigger?
-        elif self.control:
+        elif np.any(input_items[1] > input_items[2]+self.trigger_power):
             # Set status variables
+            raise ValueError("Trigger Debug")
             self.writing = True
             self.timer = 0
             output_items[0][:] = 1
