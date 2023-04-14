@@ -1,6 +1,6 @@
 options:
   parameters:
-    author: ''
+    author: Jaden Keener
     catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
@@ -9,7 +9,7 @@ options:
     description: ''
     gen_cmake: 'On'
     gen_linking: dynamic
-    generate_options: qt_gui
+    generate_options: no_gui
     hier_block_src_path: '.:'
     id: timertrigger
     max_nouts: '0'
@@ -42,7 +42,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [416, 28.0]
+    coordinate: [496, 36.0]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -54,7 +54,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [272, 28.0]
+    coordinate: [352, 36.0]
     rotation: 0
     state: enabled
 - name: analog_sig_source_x_0
@@ -101,19 +101,16 @@ blocks:
 - name: epy_block_0
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
-      \ GRC will instantiate the first class it finds\nto get ports and parameters\
-      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
-      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      from gnuradio import gr\nimport pmt\nimport time\nimport datetime \n\n\nclass\
-      \ blk(gr.basic_block):  # other base classes are basic_block, decim_block, interp_block\n\
-      \    \"\"\"Embedded Python Block example - a simple multiply const\"\"\"\n \
-      \   \n    def __init__(self, hour=0, min=0, sec=0, capture_window = 10, ionosonde_period\
-      \ = 12):  # only default arguments here\n        \"\"\"arguments to this function\
-      \ show up as parameters in GRC\"\"\"\n        gr.basic_block.__init__(\n   \
-      \         self,\n            name='Real Timer Trigger',   # will show up in\
-      \ GRC\n            in_sig=[np.complex64],\n            out_sig=None\n      \
-      \  )\n        # if an attribute with the same name as a parameter is found,\n\
+    _source_code: "\"\"\"\nReal Timer Trigger\n\"\"\"\n\nimport numpy as np\nfrom\
+      \ gnuradio import gr\nimport pmt\nimport time\nimport datetime \nimport os\n\
+      \n\n\nclass blk(gr.basic_block):  # other base classes are basic_block, decim_block,\
+      \ interp_block\n    \"\"\"Embedded Python Block example - a simple multiply\
+      \ const\"\"\"\n    \n    def __init__(self, hour=0, min=0, sec=0, capture_window\
+      \ = 10, ionosonde_period = 12):  # only default arguments here\n        \"\"\
+      \"arguments to this function show up as parameters in GRC\"\"\"\n        gr.basic_block.__init__(\n\
+      \            self,\n            name='Real Timer Trigger',   # will show up\
+      \ in GRC\n            in_sig=[np.complex64],\n            out_sig=None\n   \
+      \     )\n        # if an attribute with the same name as a parameter is found,\n\
       \        # a callback is registered (properties work, too).\n        self.hour\
       \ = hour\n        self.min = min\n        self.sec = sec\n        self.capture_window\
       \ = capture_window\n        self.iono_per = ionosonde_period\n        #self.portName_fileName\
@@ -122,25 +119,28 @@ blocks:
       \        timeList = list(timeTuple)\n        timeList[3] = self.hour\n     \
       \   timeList[4] = self.min\n        timeList[5] = self.sec\n        timeTuple\
       \ = tuple(timeList)\n        self.startTime = time.mktime(timeTuple)\n     \
-      \   self.writing = False\n        \n    def general_work(self, input_items,\
+      \   self.writing = False\n        \n        \n    def general_work(self, input_items,\
       \ output_items):\n        if self.writing:\n            self.file.write(input_items[0][:])\n\
       \            if time.time() >= self.startTime + self.capture_window:\n     \
       \           self.writing = False\n                self.file.close()\n      \
       \          self.startTime = time.time() + self.iono_per*60-self.capture_window\n\
-      \                print(\"Stop Writing\")\n        elif time.time() >= self.startTime:\n\
-      \            self.writing = True\n            self.filename = '{date:%Y%m%d_%H%M%S}.chirp'.format(date=datetime.datetime.now())\n\
-      \            print(\"Writing\")\n            self.file = open(self.filename,\
-      \ \"ab\")\n            self.file.write(input_items[0][:])\n        \n      \
-      \  \n        self.consume(0, len(input_items[0]))\n        return 0\n\n    \
-      \    \n        "
+      \                print(\"Stop Writing, Running LocalChirp\")\n             \
+      \   os.system(\"python3 LocalChirp.py -p self.filename -l self.capture_window\
+      \ -s samp_rate\")\n                \n                \n        elif time.time()\
+      \ >= self.startTime:\n            self.writing = True\n            self.filename\
+      \ = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n      \
+      \      print(\"Writing\")\n            self.file = open(self.filename, \"ab\"\
+      )\n            self.file.write(input_items[0][:])\n        \n        \n    \
+      \    self.consume(0, len(input_items[0]))\n        return 0\n\n        \n  \
+      \      "
     affinity: ''
     alias: ''
     capture_window: '10'
     comment: ''
-    hour: '13'
+    hour: '0'
     ionosonde_period: '0.5'
     maxoutbuf: '0'
-    min: '45'
+    min: '0'
     minoutbuf: '0'
     sec: '0'
   states:
@@ -151,7 +151,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1248, 1028.0]
+    coordinate: [2056, 1076.0]
     rotation: 0
     state: true
 - name: epy_block_1
@@ -207,123 +207,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [328, 664.0]
+    coordinate: [840, 928.0]
     rotation: 0
     state: disabled
-- name: epy_block_1_0
-  id: epy_block
-  parameters:
-    _source_code: "\"\"\" Timer Trigger Block\n\"\"\"\n\nimport numpy as np\nimport\
-      \ datetime\nimport time\nfrom gnuradio import gr\nimport pmt\n\nclass blk(gr.sync_block):\
-      \  \n\n    def __init__(self, start_time = 'test', capture_window = 5): \n \
-      \       \n        \"\"\" INPUTS/OUTPUTS:\n                input[0]: Raw Data\
-      \ from SDR\n                \n                output[0]: debug state information\n\
-      \                output[1]: debug timer information\n                \n    \
-      \            msg[controlPort]: input from custom FFT filter\n            \"\"\
-      \"\n        gr.sync_block.__init__(\n            self,\n            name='Timer\
-      \  Trigger', \n            in_sig=[np.complex64],\n            out_sig=[np.complex64]\n\
-      \        )\n        \n        self.start_time = start_time\n        self.portName_fileName\
-      \ = 'File Name'\n        self.message_port_register_out(pmt.intern(self.portName_fileName))\n\
-      \        \n       \n       \n    def work(self, input_items, output_items):\n\
-      \        \n        # Check if we are writing\n        if self.writing:\n   \
-      \         # If we are and we still have time on the clock\n            if self.timer\
-      \ < self.timerMax:\n                # Then write data to file\n            \
-      \    self.file.write(input_items[0][:])\n                self.timer += len(input_items[0])\n\
-      \                output_items[0][:] = 2\n            else:\n               \
-      \ # Otherwise close the file and reset flags\n                self.file.close()\n\
-      \                self.writing = False\n                self.control = False\n\
-      \                output_items[0][:] = 0\n        \n        # If not writing,\
-      \ is it time?\n        elif :\n            # Set status variables\n        \
-      \    raise ValueError(\"Trigger Debug\")\n            self.writing = True\n\
-      \            self.timer = 0\n            output_items[0][:] = 1\n          \
-      \  \n            # Open new file and do first write\n            self.filename\
-      \ = '{date:%Y%m%d_%H%M%S}.chirp'.format(date=datetime.datetime.now())\n    \
-      \        self.file = open(self.filename, \"ab\")\n            self.file.write(input_items[0][:])\n\
-      \        # Show debug state of none\n        else:\n            output_items[0][:]\
-      \ = 0\n        \n        # For debugging timer\n        output_items[1][:] =\
-      \ self.timer\n        \n        # gnuradio needs this return\n        return\
-      \ len(output_items[0])\n"
-    affinity: ''
-    alias: ''
-    capture_window: '5'
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    start_time: None
-  states:
-    _io_cache: '(''Timer  Trigger'', ''blk'', [(''start_time'', ''None''), (''capture_window'',
-      ''5'')], [(''0'', ''complex'', 1)], [(''0'', ''complex'', 1), (''File Name'',
-      ''message'', 1)], '' INPUTS/OUTPUTS:\n                input[0]: Raw Data from
-      SDR\n                \n                output[0]: debug state information\n                output[1]:
-      debug timer information\n                \n                msg[controlPort]:
-      input from custom FFT filter\n            '', [''start_time''])'
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1632, 1356.0]
-    rotation: 0
-    state: disabled
-- name: qtgui_waterfall_sink_x_0
-  id: qtgui_waterfall_sink_x
-  parameters:
-    affinity: ''
-    alias: ''
-    alpha1: '1.0'
-    alpha10: '1.0'
-    alpha2: '1.0'
-    alpha3: '1.0'
-    alpha4: '1.0'
-    alpha5: '1.0'
-    alpha6: '1.0'
-    alpha7: '1.0'
-    alpha8: '1.0'
-    alpha9: '1.0'
-    axislabels: 'True'
-    bw: samp_rate
-    color1: '0'
-    color10: '0'
-    color2: '0'
-    color3: '0'
-    color4: '0'
-    color5: '0'
-    color6: '0'
-    color7: '0'
-    color8: '0'
-    color9: '0'
-    comment: ''
-    fc: '0'
-    fftsize: '1024'
-    freqhalf: 'True'
-    grid: 'False'
-    gui_hint: ''
-    int_max: '10'
-    int_min: '-140'
-    label1: ''
-    label10: ''
-    label2: ''
-    label3: ''
-    label4: ''
-    label5: ''
-    label6: ''
-    label7: ''
-    label8: ''
-    label9: ''
-    legend: 'True'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    name: '""'
-    nconnections: '1'
-    showports: 'False'
-    type: complex
-    update_time: '0.10'
-    wintype: window.WIN_BLACKMAN_hARRIS
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1232, 320.0]
-    rotation: 0
-    state: true
 - name: uhd_usrp_source_0
   id: uhd_usrp_source
   parameters:
@@ -757,17 +643,16 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [872, 600.0]
+    coordinate: [1384, 744.0]
     rotation: 0
-    state: true
+    state: enabled
 
 connections:
 - [analog_sig_source_x_0, '0', blocks_throttle_0_0, '0']
 - [blocks_throttle_0_0, '0', epy_block_1, '0']
+- [blocks_throttle_0_0, '0', uhd_usrp_source_0, command]
 - [epy_block_1, '0', epy_block_0, '0']
-- [epy_block_1, '0', qtgui_waterfall_sink_x_0, '0']
 - [uhd_usrp_source_0, '0', epy_block_0, '0']
-- [uhd_usrp_source_0, '0', qtgui_waterfall_sink_x_0, '0']
 
 metadata:
   file_format: 1

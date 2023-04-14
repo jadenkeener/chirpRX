@@ -1,9 +1,5 @@
 """
-Embedded Python Blocks:
-
-Each time this file is saved, GRC will instantiate the first class it finds
-to get ports and parameters of your block. The arguments to __init__  will
-be the parameters. All of them are required to have default values!
+Real Timer Trigger
 """
 
 import numpy as np
@@ -11,6 +7,8 @@ from gnuradio import gr
 import pmt
 import time
 import datetime 
+import os
+
 
 
 class blk(gr.basic_block):  # other base classes are basic_block, decim_block, interp_block
@@ -44,20 +42,24 @@ class blk(gr.basic_block):  # other base classes are basic_block, decim_block, i
         self.startTime = time.mktime(timeTuple)
         self.writing = False
         
+        
     def general_work(self, input_items, output_items):
         if self.writing:
-            #self.file.write(input_items[0][:])
+            self.file.write(input_items[0][:])
             if time.time() >= self.startTime + self.capture_window:
                 self.writing = False
-                #self.file.close()
+                self.file.close()
                 self.startTime = time.time() + self.iono_per*60-self.capture_window
-                print("Stop Writing")
+                print("Stop Writing, Running LocalChirp")
+                os.system("python3 LocalChirp.py -p self.filename -l self.capture_window -s samp_rate")
+                
+                
         elif time.time() >= self.startTime:
             self.writing = True
-            #self.filename = '{date:%Y%m%d_%H%M%S}.chirp'.format(date=datetime.datetime.now())
+            self.filename = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())
             print("Writing")
-            #self.file = open(self.filename, "ab")
-            #self.file.write(input_items[0][:])
+            self.file = open(self.filename, "ab")
+            self.file.write(input_items[0][:])
         
         
         self.consume(0, len(input_items[0]))

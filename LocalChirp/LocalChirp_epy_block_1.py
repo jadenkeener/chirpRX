@@ -9,6 +9,7 @@ Generates a local tone that sweeps the spectrum at the specified slope
 import numpy as np
 import pmt
 from gnuradio import gr
+import os
 
 
 class blk(gr.sync_block):  
@@ -74,7 +75,7 @@ class blk(gr.sync_block):
             self.lastT = newT
             self.lastF = newF
         
-        # Otherwise do nothing
+        # Otherwise call ionogrammer_lite
         else:
             output_items[0][:] = input_items[0] * 0;
             if self.debug:
