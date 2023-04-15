@@ -14,7 +14,7 @@ import os
 
 class blk(gr.sync_block):  
 
-    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):
+    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3, filename=None, decimation=100):
         gr.sync_block.__init__(
             self,
             name='Local Chirp Test 1.0',   
@@ -25,6 +25,8 @@ class blk(gr.sync_block):
         self.slope = slope  
         self.fs = samp_rate
         self.offset = offset
+        self.filename = filename
+        self.decimation = decimation
         self.debug = False
         
         self.lastT = 0
@@ -78,6 +80,7 @@ class blk(gr.sync_block):
         # Otherwise call ionogrammer_lite
         else:
             output_items[0][:] = input_items[0] * 0;
+            os.system("python3 ionogrammer_lite.py -p "+self.filename+" -d "+self.decimation)
             if self.debug:
                 self.debug = False
                 raise ValueError(self.lastF)

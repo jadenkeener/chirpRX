@@ -42,7 +42,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [320, 68.0]
+    coordinate: [1712, 52.0]
     rotation: 0
     state: enabled
 - name: filt_cutoff
@@ -69,6 +69,18 @@ blocks:
     coordinate: [1992, 876.0]
     rotation: 0
     state: enabled
+- name: outfile
+  id: variable
+  parameters:
+    comment: ''
+    value: path.split(".")[0] + ".chirp"
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1552, 52.0]
+    rotation: 0
+    state: enabled
 - name: blocks_file_sink_0
   id: blocks_file_sink
   parameters:
@@ -76,7 +88,7 @@ blocks:
     alias: ''
     append: 'False'
     comment: ''
-    file: path.split(".")[0] + ".chirp"
+    file: outfile
     type: complex
     unbuffered: 'False'
     vlen: '1'
@@ -186,16 +198,17 @@ blocks:
       Generates a local tone that sweeps the spectrum at the specified slope\n\n\"\
       \"\"\n\nimport numpy as np\nimport pmt\nfrom gnuradio import gr\nimport os\n\
       \n\nclass blk(gr.sync_block):  \n\n    def __init__(self, slope=100e3, samp_rate=200e6/12,\
-      \ offset = 10e3):\n        gr.sync_block.__init__(\n            self,\n    \
-      \        name='Local Chirp Test 1.0',   \n            in_sig=[np.complex64],\n\
-      \            out_sig=[np.complex64]\n        )\n\n        self.slope = slope\
-      \  \n        self.fs = samp_rate\n        self.offset = offset\n        self.debug\
-      \ = False\n        \n        self.lastT = 0\n        self.lastF = -self.fs/2\
-      \ + self.offset\n        self.spanF = self.lastF + self.fs/2 - self.offset\n\
-      \        self.dt = 1/self.fs\n        self.df = self.slope/self.fs/2 #why /2\
-      \ ?? I have no idea, but it has to be\n        # over 2 has something to do\
-      \ with span of f not being -fs/2 to fs/2 but\n        # just fs..???\n     \
-      \   \n        \n        self.controlPortName = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+      \ offset = 10e3, filename=None, decimation=100):\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='Local Chirp Test 1.0',   \n          \
+      \  in_sig=[np.complex64],\n            out_sig=[np.complex64]\n        )\n\n\
+      \        self.slope = slope  \n        self.fs = samp_rate\n        self.offset\
+      \ = offset\n        self.filename = filename\n        self.decimation = decimation\n\
+      \        self.debug = False\n        \n        self.lastT = 0\n        self.lastF\
+      \ = -self.fs/2 + self.offset\n        self.spanF = self.lastF + self.fs/2 -\
+      \ self.offset\n        self.dt = 1/self.fs\n        self.df = self.slope/self.fs/2\
+      \ #why /2 ?? I have no idea, but it has to be\n        # over 2 has something\
+      \ to do with span of f not being -fs/2 to fs/2 but\n        # just fs..???\n\
+      \        \n        \n        self.controlPortName = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
       \        self.control = False\n        \n            \n        \n    def handle_msg(self,\
       \ msg):\n        controlIn = pmt.to_bool(msg)\n        \n        if controlIn\
@@ -214,12 +227,15 @@ blocks:
       \ = np.exp(1j*2*np.pi*f*t)\n            \n            # Update bookmarks\n \
       \           self.lastT = newT\n            self.lastF = newF\n        \n   \
       \     # Otherwise call ionogrammer_lite\n        else:\n            output_items[0][:]\
-      \ = input_items[0] * 0;\n            if self.debug:\n                self.debug\
-      \ = False\n                raise ValueError(self.lastF)\n            \n    \
-      \    \n        return len(output_items[0])\n"
+      \ = input_items[0] * 0;\n            os.system(\"python3 ionogrammer_lite.py\
+      \ -p \"+self.filename+\" -d \"+self.decimation)\n            if self.debug:\n\
+      \                self.debug = False\n                raise ValueError(self.lastF)\n\
+      \            \n        \n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
+    decimation: decimation
+    filename: outfile
     maxoutbuf: '0'
     minoutbuf: '0'
     offset: '0'
@@ -227,8 +243,9 @@ blocks:
     slope: 100e3
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
-      '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
-      'message', 1)], [('0', 'complex', 1)], '', ['offset', 'slope'])
+      '16666666.666666666'), ('offset', '10000.0'), ('filename', 'None'), ('decimation',
+      '100')], [('0', 'complex', 1), ('controlIn', 'message', 1)], [('0', 'complex',
+      1)], '', ['decimation', 'filename', 'offset', 'slope'])
     bus_sink: false
     bus_source: false
     bus_structure: null

@@ -42,6 +42,7 @@ class LocalChirp(gr.top_block):
         # Variables
         ##################################################
         self.filt_cutoff = filt_cutoff = samp_rate/decimation*0.8
+        self.outfile = outfile = path.split(".")[0] + ".chirp"
         self.filt_transwidth = filt_transwidth = (samp_rate/decimation - filt_cutoff) *2
         self.fftsz = fftsz = 4096
 
@@ -49,13 +50,13 @@ class LocalChirp(gr.top_block):
         # Blocks
         ##################################################
         self.filter_fft_low_pass_filter_0 = filter.fft_filter_ccc(decimation, firdes.low_pass(1, samp_rate, filt_cutoff, filt_transwidth, window.WIN_HAMMING, 6.76), 8)
-        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate, offset=0)
+        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate, offset=0, filename=outfile, decimation=decimation)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_multiply_conjugate_cc_0 = blocks.multiply_conjugate_cc(1)
         self.blocks_head_0 = blocks.head(gr.sizeof_gr_complex*1, (int(samp_rate*length)))
         self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, path, False, 0, 0)
         self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
-        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_gr_complex*1, path.split(".")[0] + ".chirp", False)
+        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_gr_complex*1, outfile, False)
         self.blocks_file_sink_0.set_unbuffered(False)
 
 
@@ -78,6 +79,7 @@ class LocalChirp(gr.top_block):
         self.decimation = decimation
         self.set_filt_cutoff(self.samp_rate/self.decimation*0.8)
         self.set_filt_transwidth((self.samp_rate/self.decimation - self.filt_cutoff) *2)
+        self.epy_block_1.decimation = self.decimation
 
     def get_length(self):
         return self.length
@@ -111,6 +113,14 @@ class LocalChirp(gr.top_block):
         self.filt_cutoff = filt_cutoff
         self.set_filt_transwidth((self.samp_rate/self.decimation - self.filt_cutoff) *2)
         self.filter_fft_low_pass_filter_0.set_taps(firdes.low_pass(1, self.samp_rate, self.filt_cutoff, self.filt_transwidth, window.WIN_HAMMING, 6.76))
+
+    def get_outfile(self):
+        return self.outfile
+
+    def set_outfile(self, outfile):
+        self.outfile = outfile
+        self.blocks_file_sink_0.open(self.outfile)
+        self.epy_block_1.filename = self.outfile
 
     def get_filt_transwidth(self):
         return self.filt_transwidth
