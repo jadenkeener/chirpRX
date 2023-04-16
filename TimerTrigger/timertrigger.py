@@ -60,7 +60,7 @@ class timertrigger(gr.top_block):
         self.uhd_usrp_source_0.set_antenna('B', 0)
         self.uhd_usrp_source_0.set_bandwidth(samp_rate, 0)
         self.uhd_usrp_source_0.set_gain(50, 0)
-        self.epy_block_0 = epy_block_0.blk(hour=0, min=0, sec=0, capture_window=10, ionosonde_period=0.5)
+        self.epy_block_0 = epy_block_0.blk(hour=0, min=0, sec=0, capture_window=10, ionosonde_period=0.5, samp_rate=12500000.0)
 
 
         ##################################################

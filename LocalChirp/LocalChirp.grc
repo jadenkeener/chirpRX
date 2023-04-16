@@ -194,21 +194,22 @@ blocks:
 - name: epy_block_1
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 3/27/23\n\n\
+    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 4/14/23\n\n\
       Generates a local tone that sweeps the spectrum at the specified slope\n\n\"\
       \"\"\n\nimport numpy as np\nimport pmt\nfrom gnuradio import gr\nimport os\n\
-      \n\nclass blk(gr.sync_block):  \n\n    def __init__(self, slope=100e3, samp_rate=200e6/12,\
-      \ offset = 10e3, filename=None, decimation=100):\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='Local Chirp Test 1.0',   \n          \
-      \  in_sig=[np.complex64],\n            out_sig=[np.complex64]\n        )\n\n\
-      \        self.slope = slope  \n        self.fs = samp_rate\n        self.offset\
-      \ = offset\n        self.filename = filename\n        self.decimation = decimation\n\
-      \        self.debug = False\n        \n        self.lastT = 0\n        self.lastF\
-      \ = -self.fs/2 + self.offset\n        self.spanF = self.lastF + self.fs/2 -\
-      \ self.offset\n        self.dt = 1/self.fs\n        self.df = self.slope/self.fs/2\
-      \ #why /2 ?? I have no idea, but it has to be\n        # over 2 has something\
-      \ to do with span of f not being -fs/2 to fs/2 but\n        # just fs..???\n\
-      \        \n        \n        self.controlPortName = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+      import time\n\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, slope=100e3,\
+      \ samp_rate=200e6/12, offset = 10e3, filename=None, decimation=100):\n     \
+      \   gr.sync_block.__init__(\n            self,\n            name='Local Chirp\
+      \ Test 1.0',   \n            in_sig=[np.complex64],\n            out_sig=[np.complex64]\n\
+      \        )\n\n        self.slope = slope  \n        self.fs = samp_rate\n  \
+      \      self.offset = offset\n        self.filename = filename\n        self.decimation\
+      \ = decimation\n        self.over = True\n        \n        self.lastT = 0\n\
+      \        self.lastF = -self.fs/2 + self.offset\n        self.spanF = self.lastF\
+      \ + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n        self.df =\
+      \ self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to be\n       \
+      \ # over 2 has something to do with span of f not being -fs/2 to fs/2 but\n\
+      \        # just fs..???\n        \n        \n        self.controlPortName =\
+      \ 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
       \        self.control = False\n        \n            \n        \n    def handle_msg(self,\
       \ msg):\n        controlIn = pmt.to_bool(msg)\n        \n        if controlIn\
@@ -226,11 +227,12 @@ blocks:
       \            # Output is a complex exponential (I/Q)\n            output_items[0][:]\
       \ = np.exp(1j*2*np.pi*f*t)\n            \n            # Update bookmarks\n \
       \           self.lastT = newT\n            self.lastF = newF\n        \n   \
-      \     # Otherwise call ionogrammer_lite\n        else:\n            output_items[0][:]\
-      \ = input_items[0] * 0;\n            os.system(\"python3 ionogrammer_lite.py\
-      \ -p \"+self.filename+\" -d \"+self.decimation)\n            if self.debug:\n\
-      \                self.debug = False\n                raise ValueError(self.lastF)\n\
-      \            \n        \n        return len(output_items[0])\n"
+      \     # Otherwise call ionogrammer_lite\n        else:\n            \n     \
+      \       output_items[0][:] = input_items[0] * 0;\n            if self.over:\n\
+      \                print(\"Locally Chirped at \"+time.strftime(\"%H:%M:%S\"))\n\
+      \                os.system(\"python3 ionogrammer_lite.py -p \"+str(self.filename)+\"\
+      \ -d \"+str(self.decimation))\n                self.over = False\n         \
+      \   \n        return len(output_items[0])"
     affinity: ''
     alias: ''
     comment: ''

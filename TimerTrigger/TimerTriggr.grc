@@ -106,33 +106,35 @@ blocks:
       \n\n\nclass blk(gr.basic_block):  # other base classes are basic_block, decim_block,\
       \ interp_block\n    \"\"\"Embedded Python Block example - a simple multiply\
       \ const\"\"\"\n    \n    def __init__(self, hour=0, min=0, sec=0, capture_window\
-      \ = 10, ionosonde_period = 12):  # only default arguments here\n        \"\"\
-      \"arguments to this function show up as parameters in GRC\"\"\"\n        gr.basic_block.__init__(\n\
-      \            self,\n            name='Real Timer Trigger',   # will show up\
-      \ in GRC\n            in_sig=[np.complex64],\n            out_sig=None\n   \
-      \     )\n        # if an attribute with the same name as a parameter is found,\n\
-      \        # a callback is registered (properties work, too).\n        self.hour\
-      \ = hour\n        self.min = min\n        self.sec = sec\n        self.capture_window\
-      \ = capture_window\n        self.iono_per = ionosonde_period\n        #self.portName_fileName\
+      \ = 10, ionosonde_period = 12, samp_rate=12.5E6):  # only default arguments\
+      \ here\n        \"\"\"arguments to this function show up as parameters in GRC\"\
+      \"\"\n        gr.basic_block.__init__(\n            self,\n            name='Real\
+      \ Timer Trigger',   # will show up in GRC\n            in_sig=[np.complex64],\n\
+      \            out_sig=None\n        )\n        # if an attribute with the same\
+      \ name as a parameter is found,\n        # a callback is registered (properties\
+      \ work, too).\n        self.hour = hour\n        self.min = min\n        self.sec\
+      \ = sec\n        self.capture_window = capture_window\n        self.iono_per\
+      \ = ionosonde_period\n        self.samp_rate = samp_rate\n        #self.portName_fileName\
       \ = 'File Name'\n        #self.message_port_register_out(pmt.intern(self.portName_fileName))\n\
       \        \n        # Calculate start time in unix\n        timeTuple = time.localtime()\n\
       \        timeList = list(timeTuple)\n        timeList[3] = self.hour\n     \
       \   timeList[4] = self.min\n        timeList[5] = self.sec\n        timeTuple\
       \ = tuple(timeList)\n        self.startTime = time.mktime(timeTuple)\n     \
-      \   self.writing = False\n        \n        \n    def general_work(self, input_items,\
-      \ output_items):\n        if self.writing:\n            self.file.write(input_items[0][:])\n\
+      \   \n        # Make sure we are in the present\n        while self.startTime\
+      \ <= time.time():\n            self.startTime = self.startTime + self.iono_per*60\n\
+      \        \n        self.writing = False\n        \n        \n    def general_work(self,\
+      \ input_items, output_items):\n        if self.writing:\n            self.file.write(input_items[0][:])\n\
       \            if time.time() >= self.startTime + self.capture_window:\n     \
       \           self.writing = False\n                self.file.close()\n      \
       \          self.startTime = time.time() + self.iono_per*60-self.capture_window\n\
       \                print(\"Stop Writing, Running LocalChirp\")\n             \
-      \   os.system(\"python3 LocalChirp.py -p self.filename -l self.capture_window\
-      \ -s samp_rate\")\n                \n                \n        elif time.time()\
-      \ >= self.startTime:\n            self.writing = True\n            self.filename\
-      \ = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n      \
-      \      print(\"Writing\")\n            self.file = open(self.filename, \"ab\"\
-      )\n            self.file.write(input_items[0][:])\n        \n        \n    \
-      \    self.consume(0, len(input_items[0]))\n        return 0\n\n        \n  \
-      \      "
+      \   os.system(\"python3 LocalChirp.py -p \"+str(self.filename)+\" -l \"+str(self.capture_window)+\"\
+      \ -s \"+str(self.samp_rate))\n                \n                \n        elif\
+      \ time.time() >= self.startTime:\n            self.writing = True\n        \
+      \    self.filename = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n\
+      \            print(\"Writing to \"+self.filename)\n            self.file = open(self.filename,\
+      \ \"ab\")\n            self.file.write(input_items[0][:])\n        \n      \
+      \  \n        self.consume(0, len(input_items[0]))\n        return 0\n"
     affinity: ''
     alias: ''
     capture_window: '10'
@@ -142,12 +144,13 @@ blocks:
     maxoutbuf: '0'
     min: '0'
     minoutbuf: '0'
+    samp_rate: '12500000.0'
     sec: '0'
   states:
     _io_cache: ('Real Timer Trigger', 'blk', [('hour', '0'), ('min', '0'), ('sec',
-      '0'), ('capture_window', '10'), ('ionosonde_period', '12')], [('0', 'complex',
-      1)], [], 'Embedded Python Block example - a simple multiply const', ['capture_window',
-      'hour', 'min', 'sec'])
+      '0'), ('capture_window', '10'), ('ionosonde_period', '12'), ('samp_rate', '12500000.0')],
+      [('0', 'complex', 1)], [], 'Embedded Python Block example - a simple multiply
+      const', ['capture_window', 'hour', 'min', 'samp_rate', 'sec'])
     bus_sink: false
     bus_source: false
     bus_structure: null

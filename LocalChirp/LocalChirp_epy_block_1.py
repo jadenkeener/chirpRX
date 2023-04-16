@@ -1,6 +1,6 @@
 """
 Local Chirp
-By Jaden Keener, Last updated 3/27/23
+By Jaden Keener, Last updated 4/14/23
 
 Generates a local tone that sweeps the spectrum at the specified slope
 
@@ -10,6 +10,7 @@ import numpy as np
 import pmt
 from gnuradio import gr
 import os
+import time
 
 
 class blk(gr.sync_block):  
@@ -27,7 +28,7 @@ class blk(gr.sync_block):
         self.offset = offset
         self.filename = filename
         self.decimation = decimation
-        self.debug = False
+        self.over = True
         
         self.lastT = 0
         self.lastF = -self.fs/2 + self.offset
@@ -79,11 +80,11 @@ class blk(gr.sync_block):
         
         # Otherwise call ionogrammer_lite
         else:
-            output_items[0][:] = input_items[0] * 0;
-            os.system("python3 ionogrammer_lite.py -p "+self.filename+" -d "+self.decimation)
-            if self.debug:
-                self.debug = False
-                raise ValueError(self.lastF)
             
-        
+            output_items[0][:] = input_items[0] * 0;
+            if self.over:
+                print("Locally Chirped at "+time.strftime("%H:%M:%S"))
+                os.system("python3 ionogrammer_lite.py -p "+str(self.filename)+" -d "+str(self.decimation))
+                self.over = False
+            
         return len(output_items[0])

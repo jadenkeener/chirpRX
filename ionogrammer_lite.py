@@ -39,6 +39,7 @@ xlabels = np.round((xlocs*100e3+8e6+offset)/1e6, 2)
 plt.yticks(ylocs, ylabels)
 plt.xticks(xlocs, xlabels)
 plt.title(filename+" Ionogram")
-os.remove(filename.split(".")[0] + ".RAW"
+os.remove(filename)
+os.remove(filename.split(".")[0] + ".RAW")
 
 plt.savefig(filename.split(".")[0] + ".png")
