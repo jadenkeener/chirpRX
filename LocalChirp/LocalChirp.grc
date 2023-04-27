@@ -183,7 +183,7 @@ blocks:
     label: Decimation
     short_id: d
     type: intx
-    value: '100'
+    value: '9000'
   states:
     bus_sink: false
     bus_source: false
@@ -232,7 +232,7 @@ blocks:
       \                print(\"Locally Chirped at \"+time.strftime(\"%H:%M:%S\"))\n\
       \                os.system(\"python3 ionogrammer_lite.py -p \"+str(self.filename)+\"\
       \ -d \"+str(self.decimation))\n                self.over = False\n         \
-      \   \n        return len(output_items[0])"
+      \   \n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -240,9 +240,9 @@ blocks:
     filename: outfile
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: '0'
+    offset: '450'
     samp_rate: samp_rate
-    slope: 100e3
+    slope: 133.33e3
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
       '16666666.666666666'), ('offset', '10000.0'), ('filename', 'None'), ('decimation',
@@ -495,4 +495,3 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0

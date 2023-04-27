@@ -134,18 +134,18 @@ blocks:
       \    self.filename = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n\
       \            print(\"Writing to \"+self.filename)\n            self.file = open(self.filename,\
       \ \"ab\")\n            self.file.write(input_items[0][:])\n        \n      \
-      \  \n        self.consume(0, len(input_items[0]))\n        return 0\n"
+      \  \n        self.consume(0, len(input_items[0]))\n        return 0\n\n"
     affinity: ''
     alias: ''
-    capture_window: '10'
+    capture_window: '150'
     comment: ''
-    hour: '0'
-    ionosonde_period: '0.5'
+    hour: '9'
+    ionosonde_period: '5'
     maxoutbuf: '0'
-    min: '0'
+    min: '42'
     minoutbuf: '0'
-    samp_rate: '12500000.0'
-    sec: '0'
+    samp_rate: samp_rate
+    sec: '55'
   states:
     _io_cache: ('Real Timer Trigger', 'blk', [('hour', '0'), ('min', '0'), ('sec',
       '0'), ('capture_window', '10'), ('ionosonde_period', '12'), ('samp_rate', '12500000.0')],
@@ -315,7 +315,7 @@ blocks:
     center_freq8: '0'
     center_freq9: '0'
     clock_rate: 0e0
-    clock_source0: gpsdo
+    clock_source0: ''
     clock_source1: ''
     clock_source2: ''
     clock_source3: ''
@@ -632,8 +632,8 @@ blocks:
     start_time: '-1.0'
     stream_args: ''
     stream_chans: '[]'
-    sync: gps_time
-    time_source0: gpsdo
+    sync: pc_clock
+    time_source0: ''
     time_source1: ''
     time_source2: ''
     time_source3: ''
@@ -659,4 +659,3 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
