@@ -124,7 +124,7 @@ blocks:
     bus_structure: null
     coordinate: [1408, 436.0]
     rotation: 0
-    state: true
+    state: enabled
 - name: blocks_throttle_0
   id: blocks_throttle
   parameters:
@@ -187,7 +187,7 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: 10e3
+    offset: 20e3
     samp_rate: samp_rate
     slope: 100e3
   states:
@@ -245,7 +245,7 @@ blocks:
     minoutbuf: '0'
     offset: '0'
     samp_rate: samp_rate
-    slope: 99e3
+    slope: 100e3
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
       '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
@@ -401,7 +401,7 @@ blocks:
     bus_structure: null
     coordinate: [2312, 660.0]
     rotation: 0
-    state: true
+    state: enabled
 
 connections:
 - [analog_sig_source_x_0, '0', blocks_throttle_0, '0']
