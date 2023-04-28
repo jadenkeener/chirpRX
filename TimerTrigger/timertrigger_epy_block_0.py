@@ -70,3 +70,4 @@ class blk(gr.basic_block):  # other base classes are basic_block, decim_block, i
         
         self.consume(0, len(input_items[0]))
         return 0
+

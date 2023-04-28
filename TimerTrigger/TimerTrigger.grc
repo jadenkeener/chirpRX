@@ -137,15 +137,15 @@ blocks:
       \  \n        self.consume(0, len(input_items[0]))\n        return 0\n\n"
     affinity: ''
     alias: ''
-    capture_window: '150'
+    capture_window: iono_window
     comment: ''
-    hour: '9'
-    ionosonde_period: '5'
+    hour: hour
+    ionosonde_period: iono_per
     maxoutbuf: '0'
-    min: '42'
+    min: minute
     minoutbuf: '0'
     samp_rate: samp_rate
-    sec: '55'
+    sec: second
   states:
     _io_cache: ('Real Timer Trigger', 'blk', [('hour', '0'), ('min', '0'), ('sec',
       '0'), ('capture_window', '10'), ('ionosonde_period', '12'), ('samp_rate', '12500000.0')],
@@ -213,6 +213,108 @@ blocks:
     coordinate: [840, 928.0]
     rotation: 0
     state: disabled
+- name: freq_offset
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Frequency Offset
+    short_id: O
+    type: eng_float
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2176, 76.0]
+    rotation: 0
+    state: true
+- name: hour
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Hour for trigger
+    short_id: H
+    type: intx
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [992, 76.0]
+    rotation: 0
+    state: true
+- name: iono_per
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Ionosonde Period (in M)
+    short_id: T
+    type: intx
+    value: '12'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1648, 76.0]
+    rotation: 0
+    state: true
+- name: iono_window
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Ionosonde Capture Window (s)
+    short_id: w
+    type: intx
+    value: '150'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1904, 76.0]
+    rotation: 0
+    state: true
+- name: minute
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Minute for trigger
+    short_id: M
+    type: intx
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1200, 76.0]
+    rotation: 0
+    state: true
+- name: second
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Second for trigger
+    short_id: S
+    type: intx
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1424, 76.0]
+    rotation: 0
+    state: true
 - name: uhd_usrp_source_0
   id: uhd_usrp_source
   parameters:
@@ -659,3 +761,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: 3.10.5.0
