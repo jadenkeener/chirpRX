@@ -42,7 +42,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1712, 52.0]
+    coordinate: [1784, 228.0]
     rotation: 0
     state: enabled
 - name: filt_cutoff
@@ -78,7 +78,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1552, 52.0]
+    coordinate: [1928, 228.0]
     rotation: 0
     state: enabled
 - name: blocks_file_sink_0
@@ -181,7 +181,7 @@ blocks:
     comment: ''
     hide: none
     label: Decimation
-    short_id: d
+    short_id: D
     type: intx
     value: '9000'
   states:
@@ -240,9 +240,9 @@ blocks:
     filename: outfile
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: '450'
+    offset: '0'
     samp_rate: samp_rate
-    slope: 133.33e3
+    slope: slope
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
       '16666666.666666666'), ('offset', '10000.0'), ('filename', 'None'), ('decimation',
@@ -285,7 +285,7 @@ blocks:
     comment: ''
     hide: none
     label: Capture Length (s)
-    short_id: l
+    short_id: W
     type: intx
     value: '150'
   states:
@@ -302,7 +302,7 @@ blocks:
     comment: ''
     hide: none
     label: File Path
-    short_id: p
+    short_id: P
     type: str
     value: None
   states:
@@ -470,7 +470,7 @@ blocks:
     comment: ''
     hide: none
     label: Sample Rate
-    short_id: s
+    short_id: B
     type: eng_float
     value: 12.5e6
   states:
@@ -478,6 +478,23 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [1088, 28.0]
+    rotation: 0
+    state: true
+- name: slope
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Ionosodne Slope
+    short_id: M
+    type: eng_float
+    value: 100E3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1280, 28.0]
     rotation: 0
     state: true
 
@@ -495,3 +512,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: 3.10.5.0

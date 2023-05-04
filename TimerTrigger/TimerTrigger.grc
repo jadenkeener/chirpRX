@@ -33,30 +33,18 @@ options:
     state: enabled
 
 blocks:
-- name: fc
+- name: iono_window
   id: variable
   parameters:
     comment: ''
-    value: 8e6+samp_rate/2
+    value: fs/slope + 30
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [496, 36.0]
+    coordinate: [1616, 548.0]
     rotation: 0
-    state: enabled
-- name: samp_rate
-  id: variable
-  parameters:
-    comment: ''
-    value: 200e6/16
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [352, 36.0]
-    rotation: 0
-    state: enabled
+    state: true
 - name: analog_sig_source_x_0
   id: analog_sig_source_x
   parameters:
@@ -69,7 +57,7 @@ blocks:
     minoutbuf: '0'
     offset: '0'
     phase: '0'
-    samp_rate: samp_rate
+    samp_rate: fs
     type: complex
     waveform: analog.GR_COS_WAVE
   states:
@@ -88,7 +76,7 @@ blocks:
     ignoretag: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samples_per_second: samp_rate
+    samples_per_second: fs
     type: complex
     vlen: '1'
   states:
@@ -98,40 +86,55 @@ blocks:
     coordinate: [488, 380.0]
     rotation: 0
     state: disabled
+- name: decimation
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Decimation
+    short_id: D
+    type: eng_float
+    value: '5000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1808, 276.0]
+    rotation: 0
+    state: true
 - name: epy_block_0
   id: epy_block
   parameters:
     _source_code: "\"\"\"\nReal Timer Trigger\n\"\"\"\n\nimport numpy as np\nfrom\
       \ gnuradio import gr\nimport pmt\nimport time\nimport datetime \nimport os\n\
-      \n\n\nclass blk(gr.basic_block):  # other base classes are basic_block, decim_block,\
-      \ interp_block\n    \"\"\"Embedded Python Block example - a simple multiply\
-      \ const\"\"\"\n    \n    def __init__(self, hour=0, min=0, sec=0, capture_window\
-      \ = 10, ionosonde_period = 12, samp_rate=12.5E6):  # only default arguments\
-      \ here\n        \"\"\"arguments to this function show up as parameters in GRC\"\
-      \"\"\n        gr.basic_block.__init__(\n            self,\n            name='Real\
-      \ Timer Trigger',   # will show up in GRC\n            in_sig=[np.complex64],\n\
-      \            out_sig=None\n        )\n        # if an attribute with the same\
-      \ name as a parameter is found,\n        # a callback is registered (properties\
-      \ work, too).\n        self.hour = hour\n        self.min = min\n        self.sec\
+      \n\n\nclass blk(gr.basic_block):  \n    \n    def __init__(self, hour=0, min=0,\
+      \ sec=0, capture_window = 10, ionosonde_period = 12, samp_rate=12.5E6, slope\
+      \ = 100E3, decimation=5e3):  # only default arguments here\n        gr.basic_block.__init__(\n\
+      \            self,\n            name='Real Timer Trigger',   # will show up\
+      \ in GRC\n            in_sig=[np.complex64],\n            out_sig=None\n   \
+      \     )\n     \n        self.hour = hour\n        self.min = min\n        self.sec\
       \ = sec\n        self.capture_window = capture_window\n        self.iono_per\
-      \ = ionosonde_period\n        self.samp_rate = samp_rate\n        #self.portName_fileName\
-      \ = 'File Name'\n        #self.message_port_register_out(pmt.intern(self.portName_fileName))\n\
-      \        \n        # Calculate start time in unix\n        timeTuple = time.localtime()\n\
-      \        timeList = list(timeTuple)\n        timeList[3] = self.hour\n     \
-      \   timeList[4] = self.min\n        timeList[5] = self.sec\n        timeTuple\
-      \ = tuple(timeList)\n        self.startTime = time.mktime(timeTuple)\n     \
-      \   \n        # Make sure we are in the present\n        while self.startTime\
-      \ <= time.time():\n            self.startTime = self.startTime + self.iono_per*60\n\
-      \        \n        self.writing = False\n        \n        \n    def general_work(self,\
-      \ input_items, output_items):\n        if self.writing:\n            self.file.write(input_items[0][:])\n\
+      \ = ionosonde_period\n        self.samp_rate = samp_rate\n        self.slope\
+      \ = slope\n        self.decimation = decimation\n\n        \n        # Calculate\
+      \ start time in unix\n        timeTuple = time.localtime()\n        timeList\
+      \ = list(timeTuple)\n        timeList[3] = self.hour\n        timeList[4] =\
+      \ self.min\n        timeList[5] = self.sec\n        timeTuple = tuple(timeList)\n\
+      \        self.startTime = time.mktime(timeTuple)\n        \n        # Make sure\
+      \ we are in the present\n        while self.startTime <= time.time():\n    \
+      \        self.startTime = self.startTime + self.iono_per*60\n        \n    \
+      \    self.writing = False\n        \n        \n    def general_work(self, input_items,\
+      \ output_items):\n        if self.writing:\n            self.file.write(input_items[0][:])\n\
       \            if time.time() >= self.startTime + self.capture_window:\n     \
       \           self.writing = False\n                self.file.close()\n      \
       \          self.startTime = time.time() + self.iono_per*60-self.capture_window\n\
       \                print(\"Stop Writing, Running LocalChirp\")\n             \
-      \   os.system(\"python3 LocalChirp.py -p \"+str(self.filename)+\" -l \"+str(self.capture_window)+\"\
-      \ -s \"+str(self.samp_rate))\n                \n                \n        elif\
-      \ time.time() >= self.startTime:\n            self.writing = True\n        \
-      \    self.filename = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n\
+      \   os.system(\"python3 LocalChirp.py\"\n                          +\" -P \"\
+      +str(self.filename)\n                          +\" -W \"+str(self.capture_window)\n\
+      \                          +\" -D \"+str(self.decimation)\n                \
+      \          +\" -M \"+str(self.slope)\n                          +\" -B \"+str(self.samp_rate))\n\
+      \                \n                \n        elif time.time() >= self.startTime:\n\
+      \            self.writing = True\n            self.filename = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n\
       \            print(\"Writing to \"+self.filename)\n            self.file = open(self.filename,\
       \ \"ab\")\n            self.file.write(input_items[0][:])\n        \n      \
       \  \n        self.consume(0, len(input_items[0]))\n        return 0\n\n"
@@ -139,18 +142,20 @@ blocks:
     alias: ''
     capture_window: iono_window
     comment: ''
+    decimation: decimation
     hour: hour
     ionosonde_period: iono_per
     maxoutbuf: '0'
     min: minute
     minoutbuf: '0'
-    samp_rate: samp_rate
+    samp_rate: fs
     sec: second
+    slope: slope
   states:
     _io_cache: ('Real Timer Trigger', 'blk', [('hour', '0'), ('min', '0'), ('sec',
-      '0'), ('capture_window', '10'), ('ionosonde_period', '12'), ('samp_rate', '12500000.0')],
-      [('0', 'complex', 1)], [], 'Embedded Python Block example - a simple multiply
-      const', ['capture_window', 'hour', 'min', 'samp_rate', 'sec'])
+      '0'), ('capture_window', '10'), ('ionosonde_period', '12'), ('samp_rate', '12500000.0'),
+      ('slope', '100000.0'), ('decimation', '5000.0')], [('0', 'complex', 1)], [],
+      '', ['capture_window', 'decimation', 'hour', 'min', 'samp_rate', 'sec', 'slope'])
     bus_sink: false
     bus_source: false
     bus_structure: null
@@ -201,7 +206,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     offset: '0'
-    samp_rate: samp_rate
+    samp_rate: fs
     slope: 100e3
   states:
     _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
@@ -213,6 +218,23 @@ blocks:
     coordinate: [840, 928.0]
     rotation: 0
     state: disabled
+- name: fc
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Center Frequency
+    short_id: C
+    type: eng_float
+    value: 14.25E6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1088, 276.0]
+    rotation: 0
+    state: true
 - name: freq_offset
   id: parameter
   parameters:
@@ -227,7 +249,24 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2176, 76.0]
+    coordinate: [1904, 76.0]
+    rotation: 0
+    state: disabled
+- name: fs
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Sample Frequency
+    short_id: B
+    type: eng_float
+    value: 12.5E6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1336, 276.0]
     rotation: 0
     state: true
 - name: hour
@@ -264,23 +303,6 @@ blocks:
     coordinate: [1648, 76.0]
     rotation: 0
     state: true
-- name: iono_window
-  id: parameter
-  parameters:
-    alias: ''
-    comment: ''
-    hide: none
-    label: Ionosonde Capture Window (s)
-    short_id: w
-    type: intx
-    value: '150'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1904, 76.0]
-    rotation: 0
-    state: true
 - name: minute
   id: parameter
   parameters:
@@ -313,6 +335,23 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [1424, 76.0]
+    rotation: 0
+    state: true
+- name: slope
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Ionosonde Slope
+    short_id: M
+    type: eng_float
+    value: 100E3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1584, 276.0]
     rotation: 0
     state: true
 - name: uhd_usrp_source_0
@@ -352,7 +391,7 @@ blocks:
     ant7: '"RX2"'
     ant8: '"RX2"'
     ant9: '"RX2"'
-    bw0: samp_rate
+    bw0: fs
     bw1: '0'
     bw10: '0'
     bw11: '0'
@@ -721,7 +760,7 @@ blocks:
     rx_agc7: Default
     rx_agc8: Default
     rx_agc9: Default
-    samp_rate: samp_rate
+    samp_rate: fs
     sd_spec0: ''
     sd_spec1: ''
     sd_spec2: ''
