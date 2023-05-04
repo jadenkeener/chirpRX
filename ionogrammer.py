@@ -26,7 +26,7 @@ parser.add_argument("-P", "--slope", type=float)
 parser.add_argument("-C", "--fc", type=float)
 args = parser.parse_args()
 
-# Places args in easier to use vars
+# Place args in easier to use vars
 decimation = args.decimation
 fc = args.fc
 fs = args.fs
