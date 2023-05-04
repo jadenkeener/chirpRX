@@ -9,12 +9,17 @@ import os
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--decimation", help = "Decimation", type=int)
 parser.add_argument("-p", "--path", help = "Path to .chirp file", type=str)
+parser.add_argument("-B", "--fs", type=float)
+parser.add_argument("-P", "--slope", type=float)
+parser.add_argument("-C", "--fc", type=float)
 args = parser.parse_args()
 
+
 decimation = args.decimation
-fs = 200e6/16
+fc = args.fc
+fs = args.fs
 fft_size = 512
-ionosonde_slope = 100e3
+ionosonde_slope = args.slope
 offset = 0
 filename = args.path
 ypoints = 5
@@ -34,7 +39,7 @@ ylocs = np.linspace(-fs/decimation/2, fs/decimation/2, ypoints)
 xlocs = np.linspace(0, len(data)/(fs/decimation), xpoints)
 
 ylabels = np.round((ylocs + fs/decimation/2)/ionosonde_slope * 1e3, 2)
-xlabels = np.round((xlocs*100e3+8e6+offset)/1e6, 2)
+xlabels = np.round((xlocs*ionosonde_slope+(fc-(fs/2))+offset)/1e6, 2)
 
 plt.yticks(ylocs, ylabels)
 plt.xticks(xlocs, xlabels)

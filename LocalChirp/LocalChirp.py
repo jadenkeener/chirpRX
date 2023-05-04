@@ -27,16 +27,18 @@ import LocalChirp_epy_block_1 as epy_block_1  # embedded python block
 
 class LocalChirp(gr.top_block):
 
-    def __init__(self, decimation=100, length=150, path='None', samp_rate=12.5e6):
+    def __init__(self, decimation=9000, fc=14.25E6, length=150, path='None', samp_rate=12.5e6, slope=100E3):
         gr.top_block.__init__(self, "localChirp", catch_exceptions=True)
 
         ##################################################
         # Parameters
         ##################################################
         self.decimation = decimation
+        self.fc = fc
         self.length = length
         self.path = path
         self.samp_rate = samp_rate
+        self.slope = slope
 
         ##################################################
         # Variables
@@ -50,7 +52,7 @@ class LocalChirp(gr.top_block):
         # Blocks
         ##################################################
         self.filter_fft_low_pass_filter_0 = filter.fft_filter_ccc(decimation, firdes.low_pass(1, samp_rate, filt_cutoff, filt_transwidth, window.WIN_HAMMING, 6.76), 8)
-        self.epy_block_1 = epy_block_1.blk(slope=100e3, samp_rate=samp_rate, offset=0, filename=outfile, decimation=decimation)
+        self.epy_block_1 = epy_block_1.blk(slope=slope, samp_rate=samp_rate, offset=0, filename=outfile, decimation=decimation, fc=fc)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_multiply_conjugate_cc_0 = blocks.multiply_conjugate_cc(1)
         self.blocks_head_0 = blocks.head(gr.sizeof_gr_complex*1, (int(samp_rate*length)))
@@ -81,6 +83,13 @@ class LocalChirp(gr.top_block):
         self.set_filt_transwidth((self.samp_rate/self.decimation - self.filt_cutoff) *2)
         self.epy_block_1.decimation = self.decimation
 
+    def get_fc(self):
+        return self.fc
+
+    def set_fc(self, fc):
+        self.fc = fc
+        self.epy_block_1.fc = self.fc
+
     def get_length(self):
         return self.length
 
@@ -105,6 +114,13 @@ class LocalChirp(gr.top_block):
         self.blocks_head_0.set_length((int(self.samp_rate*self.length)))
         self.blocks_throttle_0.set_sample_rate(self.samp_rate)
         self.filter_fft_low_pass_filter_0.set_taps(firdes.low_pass(1, self.samp_rate, self.filt_cutoff, self.filt_transwidth, window.WIN_HAMMING, 6.76))
+
+    def get_slope(self):
+        return self.slope
+
+    def set_slope(self, slope):
+        self.slope = slope
+        self.epy_block_1.slope = self.slope
 
     def get_filt_cutoff(self):
         return self.filt_cutoff
@@ -140,24 +156,30 @@ class LocalChirp(gr.top_block):
 def argument_parser():
     parser = ArgumentParser()
     parser.add_argument(
-        "-d", "--decimation", dest="decimation", type=intx, default=100,
+        "-D", "--decimation", dest="decimation", type=intx, default=9000,
         help="Set Decimation [default=%(default)r]")
     parser.add_argument(
-        "-l", "--length", dest="length", type=intx, default=150,
+        "-C", "--fc", dest="fc", type=eng_float, default=eng_notation.num_to_str(float(14.25E6)),
+        help="Set fc [default=%(default)r]")
+    parser.add_argument(
+        "-W", "--length", dest="length", type=eng_float, default=eng_notation.num_to_str(float(150)),
         help="Set Capture Length (s) [default=%(default)r]")
     parser.add_argument(
-        "-p", "--path", dest="path", type=str, default='None',
+        "-P", "--path", dest="path", type=str, default='None',
         help="Set File Path [default=%(default)r]")
     parser.add_argument(
-        "-s", "--samp-rate", dest="samp_rate", type=eng_float, default=eng_notation.num_to_str(float(12.5e6)),
+        "-B", "--samp-rate", dest="samp_rate", type=eng_float, default=eng_notation.num_to_str(float(12.5e6)),
         help="Set Sample Rate [default=%(default)r]")
+    parser.add_argument(
+        "-M", "--slope", dest="slope", type=eng_float, default=eng_notation.num_to_str(float(100E3)),
+        help="Set Ionosodne Slope [default=%(default)r]")
     return parser
 
 
 def main(top_block_cls=LocalChirp, options=None):
     if options is None:
         options = argument_parser().parse_args()
-    tb = top_block_cls(decimation=options.decimation, length=options.length, path=options.path, samp_rate=options.samp_rate)
+    tb = top_block_cls(decimation=options.decimation, fc=options.fc, length=options.length, path=options.path, samp_rate=options.samp_rate, slope=options.slope)
 
     def sig_handler(sig=None, frame=None):
         tb.stop()

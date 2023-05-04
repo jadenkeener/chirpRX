@@ -194,22 +194,21 @@ blocks:
 - name: epy_block_1
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 4/14/23\n\n\
-      Generates a local tone that sweeps the spectrum at the specified slope\n\n\"\
-      \"\"\n\nimport numpy as np\nimport pmt\nfrom gnuradio import gr\nimport os\n\
-      import time\n\n\nclass blk(gr.sync_block):  \n\n    def __init__(self, slope=100e3,\
-      \ samp_rate=200e6/12, offset = 10e3, filename=None, decimation=100):\n     \
-      \   gr.sync_block.__init__(\n            self,\n            name='Local Chirp\
-      \ Test 1.0',   \n            in_sig=[np.complex64],\n            out_sig=[np.complex64]\n\
-      \        )\n\n        self.slope = slope  \n        self.fs = samp_rate\n  \
-      \      self.offset = offset\n        self.filename = filename\n        self.decimation\
-      \ = decimation\n        self.over = True\n        \n        self.lastT = 0\n\
-      \        self.lastF = -self.fs/2 + self.offset\n        self.spanF = self.lastF\
-      \ + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n        self.df =\
-      \ self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to be\n       \
-      \ # over 2 has something to do with span of f not being -fs/2 to fs/2 but\n\
-      \        # just fs..???\n        \n        \n        self.controlPortName =\
-      \ 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
+    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 5/3/23\n\nGenerates\
+      \ a local tone that sweeps the spectrum at the specified slope\n\n\"\"\"\n\n\
+      import numpy as np\nimport pmt\nfrom gnuradio import gr\nimport os\nimport time\n\
+      \n\nclass blk(gr.sync_block):  \n\n    def __init__(self, slope=100e3, samp_rate=200e6/12,\
+      \ offset = 10e3, filename=None, decimation=100, fc = 14.25E6):\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='Local Chirp 1.6',   \n            in_sig=[np.complex64],\n\
+      \            out_sig=[np.complex64]\n        )\n\n        self.slope = slope\
+      \  \n        self.fs = samp_rate\n        self.fc = fc\n        self.offset\
+      \ = offset\n        self.filename = filename\n        self.decimation = decimation\n\
+      \        self.over = True\n        \n        self.lastT = 0\n        self.lastF\
+      \ = -self.fs/2 + self.offset\n        self.spanF = self.lastF + self.fs/2 -\
+      \ self.offset\n        self.dt = 1/self.fs\n        self.df = self.slope/self.fs/2\
+      \ #why /2 ?? I have no idea, but it has to be\n        # over 2 has something\
+      \ to do with span of f not being -fs/2 to fs/2 but\n        # just fs..???\n\
+      \        \n        \n        self.controlPortName = 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
       \        self.control = False\n        \n            \n        \n    def handle_msg(self,\
       \ msg):\n        controlIn = pmt.to_bool(msg)\n        \n        if controlIn\
@@ -230,13 +229,17 @@ blocks:
       \     # Otherwise call ionogrammer_lite\n        else:\n            \n     \
       \       output_items[0][:] = input_items[0] * 0;\n            if self.over:\n\
       \                print(\"Locally Chirped at \"+time.strftime(\"%H:%M:%S\"))\n\
-      \                os.system(\"python3 ionogrammer_lite.py -p \"+str(self.filename)+\"\
-      \ -d \"+str(self.decimation))\n                self.over = False\n         \
-      \   \n        return len(output_items[0])\n"
+      \                os.system(\"python3 ionogrammer_lite.py\"\n               \
+      \           +\" -p \"+str(self.filename)\n                          +\" -P \"\
+      +str(self.slope)\n                          +\" -B \"+str(self.fs)\n       \
+      \                   +\" -C \"+str(self.fc)\n                          +\" -d\
+      \ \"+str(self.decimation))\n                self.over = False\n            \n\
+      \        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
     decimation: decimation
+    fc: fc
     filename: outfile
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -244,16 +247,33 @@ blocks:
     samp_rate: samp_rate
     slope: slope
   states:
-    _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
-      '16666666.666666666'), ('offset', '10000.0'), ('filename', 'None'), ('decimation',
-      '100')], [('0', 'complex', 1), ('controlIn', 'message', 1)], [('0', 'complex',
-      1)], '', ['decimation', 'filename', 'offset', 'slope'])
+    _io_cache: ('Local Chirp 1.6', 'blk', [('slope', '100000.0'), ('samp_rate', '16666666.666666666'),
+      ('offset', '10000.0'), ('filename', 'None'), ('decimation', '100'), ('fc', '14250000.0')],
+      [('0', 'complex', 1), ('controlIn', 'message', 1)], [('0', 'complex', 1)], '',
+      ['decimation', 'fc', 'filename', 'offset', 'slope'])
     bus_sink: false
     bus_source: false
     bus_structure: null
     coordinate: [1024, 368.0]
     rotation: 0
     state: enabled
+- name: fc
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: fc
+    short_id: C
+    type: eng_float
+    value: 14.25E6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1504, 28.0]
+    rotation: 0
+    state: true
 - name: filter_fft_low_pass_filter_0
   id: filter_fft_low_pass_filter
   parameters:
@@ -286,7 +306,7 @@ blocks:
     hide: none
     label: Capture Length (s)
     short_id: W
-    type: intx
+    type: eng_float
     value: '150'
   states:
     bus_sink: false

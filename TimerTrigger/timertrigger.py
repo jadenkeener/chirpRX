@@ -26,24 +26,25 @@ import timertrigger_epy_block_0 as epy_block_0  # embedded python block
 
 class timertrigger(gr.top_block):
 
-    def __init__(self, freq_offset=0, hour=0, iono_per=12, iono_window=150, minute=0, second=0):
+    def __init__(self, decimation=5000, fc=14.25E6, fs=12.5E6, hour=0, iono_per=12, minute=0, second=0, slope=100E3):
         gr.top_block.__init__(self, "Timer Trigger", catch_exceptions=True)
 
         ##################################################
         # Parameters
         ##################################################
-        self.freq_offset = freq_offset
+        self.decimation = decimation
+        self.fc = fc
+        self.fs = fs
         self.hour = hour
         self.iono_per = iono_per
-        self.iono_window = iono_window
         self.minute = minute
         self.second = second
+        self.slope = slope
 
         ##################################################
         # Variables
         ##################################################
-        self.samp_rate = samp_rate = 200e6/16
-        self.fc = fc = 8e6+samp_rate/2
+        self.iono_window = iono_window = fs/slope + 30
 
         ##################################################
         # Blocks
@@ -56,14 +57,14 @@ class timertrigger(gr.top_block):
                 channels=list(range(0,1)),
             ),
         )
-        self.uhd_usrp_source_0.set_samp_rate(samp_rate)
+        self.uhd_usrp_source_0.set_samp_rate(fs)
         self.uhd_usrp_source_0.set_time_now(uhd.time_spec(time.time()), uhd.ALL_MBOARDS)
 
         self.uhd_usrp_source_0.set_center_freq(fc, 0)
         self.uhd_usrp_source_0.set_antenna('B', 0)
-        self.uhd_usrp_source_0.set_bandwidth(samp_rate, 0)
+        self.uhd_usrp_source_0.set_bandwidth(fs, 0)
         self.uhd_usrp_source_0.set_gain(50, 0)
-        self.epy_block_0 = epy_block_0.blk(hour=hour, min=minute, sec=second, capture_window=iono_window, ionosonde_period=iono_per, samp_rate=samp_rate)
+        self.epy_block_0 = epy_block_0.blk(hour=hour, min=minute, sec=second, capture_window=iono_window, ionosonde_period=iono_per, samp_rate=fs, slope=slope, decimation=decimation, fc=fc)
 
 
         ##################################################
@@ -72,11 +73,30 @@ class timertrigger(gr.top_block):
         self.connect((self.uhd_usrp_source_0, 0), (self.epy_block_0, 0))
 
 
-    def get_freq_offset(self):
-        return self.freq_offset
+    def get_decimation(self):
+        return self.decimation
 
-    def set_freq_offset(self, freq_offset):
-        self.freq_offset = freq_offset
+    def set_decimation(self, decimation):
+        self.decimation = decimation
+        self.epy_block_0.decimation = self.decimation
+
+    def get_fc(self):
+        return self.fc
+
+    def set_fc(self, fc):
+        self.fc = fc
+        self.epy_block_0.fc = self.fc
+        self.uhd_usrp_source_0.set_center_freq(self.fc, 0)
+
+    def get_fs(self):
+        return self.fs
+
+    def set_fs(self, fs):
+        self.fs = fs
+        self.set_iono_window(self.fs/self.slope + 30)
+        self.epy_block_0.samp_rate = self.fs
+        self.uhd_usrp_source_0.set_samp_rate(self.fs)
+        self.uhd_usrp_source_0.set_bandwidth(self.fs, 0)
 
     def get_hour(self):
         return self.hour
@@ -90,13 +110,6 @@ class timertrigger(gr.top_block):
 
     def set_iono_per(self, iono_per):
         self.iono_per = iono_per
-
-    def get_iono_window(self):
-        return self.iono_window
-
-    def set_iono_window(self, iono_window):
-        self.iono_window = iono_window
-        self.epy_block_0.capture_window = self.iono_window
 
     def get_minute(self):
         return self.minute
@@ -112,52 +125,56 @@ class timertrigger(gr.top_block):
         self.second = second
         self.epy_block_0.sec = self.second
 
-    def get_samp_rate(self):
-        return self.samp_rate
+    def get_slope(self):
+        return self.slope
 
-    def set_samp_rate(self, samp_rate):
-        self.samp_rate = samp_rate
-        self.set_fc(8e6+self.samp_rate/2)
-        self.epy_block_0.samp_rate = self.samp_rate
-        self.uhd_usrp_source_0.set_samp_rate(self.samp_rate)
-        self.uhd_usrp_source_0.set_bandwidth(self.samp_rate, 0)
+    def set_slope(self, slope):
+        self.slope = slope
+        self.set_iono_window(self.fs/self.slope + 30)
+        self.epy_block_0.slope = self.slope
 
-    def get_fc(self):
-        return self.fc
+    def get_iono_window(self):
+        return self.iono_window
 
-    def set_fc(self, fc):
-        self.fc = fc
-        self.uhd_usrp_source_0.set_center_freq(self.fc, 0)
+    def set_iono_window(self, iono_window):
+        self.iono_window = iono_window
+        self.epy_block_0.capture_window = self.iono_window
 
 
 
 def argument_parser():
     parser = ArgumentParser()
     parser.add_argument(
-        "-O", "--freq-offset", dest="freq_offset", type=eng_float, default=eng_notation.num_to_str(float(0)),
-        help="Set Frequency Offset [default=%(default)r]")
+        "-D", "--decimation", dest="decimation", type=intx, default=5000,
+        help="Set Decimation [default=%(default)r]")
+    parser.add_argument(
+        "-C", "--fc", dest="fc", type=eng_float, default=eng_notation.num_to_str(float(14.25E6)),
+        help="Set Center Frequency [default=%(default)r]")
+    parser.add_argument(
+        "-B", "--fs", dest="fs", type=eng_float, default=eng_notation.num_to_str(float(12.5E6)),
+        help="Set Sample Frequency [default=%(default)r]")
     parser.add_argument(
         "-H", "--hour", dest="hour", type=intx, default=0,
         help="Set Hour for trigger [default=%(default)r]")
     parser.add_argument(
-        "-T", "--iono-per", dest="iono_per", type=intx, default=12,
+        "-T", "--iono-per", dest="iono_per", type=eng_float, default=eng_notation.num_to_str(float(12)),
         help="Set Ionosonde Period (in M) [default=%(default)r]")
-    parser.add_argument(
-        "-w", "--iono-window", dest="iono_window", type=intx, default=150,
-        help="Set Ionosonde Capture Window (s) [default=%(default)r]")
     parser.add_argument(
         "-M", "--minute", dest="minute", type=intx, default=0,
         help="Set Minute for trigger [default=%(default)r]")
     parser.add_argument(
         "-S", "--second", dest="second", type=intx, default=0,
         help="Set Second for trigger [default=%(default)r]")
+    parser.add_argument(
+        "-P", "--slope", dest="slope", type=eng_float, default=eng_notation.num_to_str(float(100E3)),
+        help="Set Ionosonde Slope [default=%(default)r]")
     return parser
 
 
 def main(top_block_cls=timertrigger, options=None):
     if options is None:
         options = argument_parser().parse_args()
-    tb = top_block_cls(freq_offset=options.freq_offset, hour=options.hour, iono_per=options.iono_per, iono_window=options.iono_window, minute=options.minute, second=options.second)
+    tb = top_block_cls(decimation=options.decimation, fc=options.fc, fs=options.fs, hour=options.hour, iono_per=options.iono_per, minute=options.minute, second=options.second, slope=options.slope)
 
     def sig_handler(sig=None, frame=None):
         tb.stop()

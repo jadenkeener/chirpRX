@@ -1,6 +1,6 @@
 """
 Local Chirp
-By Jaden Keener, Last updated 4/14/23
+By Jaden Keener, Last updated 5/3/23
 
 Generates a local tone that sweeps the spectrum at the specified slope
 
@@ -15,16 +15,17 @@ import time
 
 class blk(gr.sync_block):  
 
-    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3, filename=None, decimation=100):
+    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3, filename=None, decimation=100, fc = 14.25E6):
         gr.sync_block.__init__(
             self,
-            name='Local Chirp Test 1.0',   
+            name='Local Chirp 1.6',   
             in_sig=[np.complex64],
             out_sig=[np.complex64]
         )
 
         self.slope = slope  
         self.fs = samp_rate
+        self.fc = fc
         self.offset = offset
         self.filename = filename
         self.decimation = decimation
@@ -84,7 +85,12 @@ class blk(gr.sync_block):
             output_items[0][:] = input_items[0] * 0;
             if self.over:
                 print("Locally Chirped at "+time.strftime("%H:%M:%S"))
-                os.system("python3 ionogrammer_lite.py -p "+str(self.filename)+" -d "+str(self.decimation))
+                os.system("python3 ionogrammer_lite.py"
+                          +" -p "+str(self.filename)
+                          +" -P "+str(self.slope)
+                          +" -B "+str(self.fs)
+                          +" -C "+str(self.fc)
+                          +" -d "+str(self.decimation))
                 self.over = False
             
         return len(output_items[0])
