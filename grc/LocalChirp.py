@@ -27,7 +27,7 @@ import LocalChirp_epy_block_1 as epy_block_1  # embedded python block
 
 class LocalChirp(gr.top_block):
 
-    def __init__(self, decimation=9000, fc=14.25E6, length=150, path='None', samp_rate=12.5e6, slope=100E3):
+    def __init__(self, decimation=9000, fc=14.25E6, length=150, msoffset=0, path='./RAW/None.RAW', samp_rate=12.5e6, slope=100E3):
         gr.top_block.__init__(self, "localChirp", catch_exceptions=True)
 
         ##################################################
@@ -36,6 +36,7 @@ class LocalChirp(gr.top_block):
         self.decimation = decimation
         self.fc = fc
         self.length = length
+        self.msoffset = msoffset
         self.path = path
         self.samp_rate = samp_rate
         self.slope = slope
@@ -44,7 +45,7 @@ class LocalChirp(gr.top_block):
         # Variables
         ##################################################
         self.filt_cutoff = filt_cutoff = samp_rate/decimation*0.8
-        self.outfile = outfile = path.split(".")[0] + ".chirp"
+        self.outfile = outfile = "./chirp/"+(path.split(".")[1]).split("/")[2]+".chirp"
         self.filt_transwidth = filt_transwidth = (samp_rate/decimation - filt_cutoff) *2
         self.fftsz = fftsz = 4096
 
@@ -52,7 +53,7 @@ class LocalChirp(gr.top_block):
         # Blocks
         ##################################################
         self.filter_fft_low_pass_filter_0 = filter.fft_filter_ccc(decimation, firdes.low_pass(1, samp_rate, filt_cutoff, filt_transwidth, window.WIN_HAMMING, 6.76), 8)
-        self.epy_block_1 = epy_block_1.blk(slope=slope, samp_rate=samp_rate, offset=0, filename=outfile, decimation=decimation, fc=fc)
+        self.epy_block_1 = epy_block_1.blk(slope=slope, samp_rate=samp_rate, offset=msoffset, filename=outfile, decimation=decimation, fc=fc)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_multiply_conjugate_cc_0 = blocks.multiply_conjugate_cc(1)
         self.blocks_head_0 = blocks.head(gr.sizeof_gr_complex*1, (int(samp_rate*length)))
@@ -96,6 +97,13 @@ class LocalChirp(gr.top_block):
     def set_length(self, length):
         self.length = length
         self.blocks_head_0.set_length((int(self.samp_rate*self.length)))
+
+    def get_msoffset(self):
+        return self.msoffset
+
+    def set_msoffset(self, msoffset):
+        self.msoffset = msoffset
+        self.epy_block_1.offset = self.msoffset
 
     def get_path(self):
         return self.path
@@ -165,7 +173,10 @@ def argument_parser():
         "-W", "--length", dest="length", type=eng_float, default=eng_notation.num_to_str(float(150)),
         help="Set Capture Length (s) [default=%(default)r]")
     parser.add_argument(
-        "-P", "--path", dest="path", type=str, default='None',
+        "-O", "--msoffset", dest="msoffset", type=eng_float, default=eng_notation.num_to_str(float(0)),
+        help="Set ms offset [default=%(default)r]")
+    parser.add_argument(
+        "-P", "--path", dest="path", type=str, default='./RAW/None.RAW',
         help="Set File Path [default=%(default)r]")
     parser.add_argument(
         "-B", "--samp-rate", dest="samp_rate", type=eng_float, default=eng_notation.num_to_str(float(12.5e6)),
@@ -179,7 +190,7 @@ def argument_parser():
 def main(top_block_cls=LocalChirp, options=None):
     if options is None:
         options = argument_parser().parse_args()
-    tb = top_block_cls(decimation=options.decimation, fc=options.fc, length=options.length, path=options.path, samp_rate=options.samp_rate, slope=options.slope)
+    tb = top_block_cls(decimation=options.decimation, fc=options.fc, length=options.length, msoffset=options.msoffset, path=options.path, samp_rate=options.samp_rate, slope=options.slope)
 
     def sig_handler(sig=None, frame=None):
         tb.stop()

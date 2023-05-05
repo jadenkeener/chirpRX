@@ -26,7 +26,7 @@ import timertrigger_epy_block_0 as epy_block_0  # embedded python block
 
 class timertrigger(gr.top_block):
 
-    def __init__(self, decimation=5000, fc=14.25E6, fs=12.5E6, hour=0, iono_per=12, minute=0, second=0, slope=100E3):
+    def __init__(self, decimation=9000, fc=14.25E6, fs=12.5E6, hour=0, iono_per=12, minute=0, msoffset=0, second=0, slope=100E3):
         gr.top_block.__init__(self, "Timer Trigger", catch_exceptions=True)
 
         ##################################################
@@ -38,13 +38,14 @@ class timertrigger(gr.top_block):
         self.hour = hour
         self.iono_per = iono_per
         self.minute = minute
+        self.msoffset = msoffset
         self.second = second
         self.slope = slope
 
         ##################################################
         # Variables
         ##################################################
-        self.iono_window = iono_window = fs/slope + 30
+        self.iono_window = iono_window = (fs/slope)*1.5
 
         ##################################################
         # Blocks
@@ -64,7 +65,7 @@ class timertrigger(gr.top_block):
         self.uhd_usrp_source_0.set_antenna('B', 0)
         self.uhd_usrp_source_0.set_bandwidth(fs, 0)
         self.uhd_usrp_source_0.set_gain(50, 0)
-        self.epy_block_0 = epy_block_0.blk(hour=hour, min=minute, sec=second, capture_window=iono_window, ionosonde_period=iono_per, samp_rate=fs, slope=slope, decimation=decimation, fc=fc)
+        self.epy_block_0 = epy_block_0.blk(hour=hour, min=minute, sec=second, capture_window=iono_window, ionosonde_period=iono_per, samp_rate=fs, slope=slope, decimation=decimation, offset=(msoffset*1E-3)*slope, fc=fc)
 
 
         ##################################################
@@ -93,7 +94,7 @@ class timertrigger(gr.top_block):
 
     def set_fs(self, fs):
         self.fs = fs
-        self.set_iono_window(self.fs/self.slope + 30)
+        self.set_iono_window((self.fs/self.slope)*1.5)
         self.epy_block_0.samp_rate = self.fs
         self.uhd_usrp_source_0.set_samp_rate(self.fs)
         self.uhd_usrp_source_0.set_bandwidth(self.fs, 0)
@@ -118,6 +119,13 @@ class timertrigger(gr.top_block):
         self.minute = minute
         self.epy_block_0.min = self.minute
 
+    def get_msoffset(self):
+        return self.msoffset
+
+    def set_msoffset(self, msoffset):
+        self.msoffset = msoffset
+        self.epy_block_0.offset = (self.msoffset*1E-3)*self.slope
+
     def get_second(self):
         return self.second
 
@@ -130,7 +138,8 @@ class timertrigger(gr.top_block):
 
     def set_slope(self, slope):
         self.slope = slope
-        self.set_iono_window(self.fs/self.slope + 30)
+        self.set_iono_window((self.fs/self.slope)*1.5)
+        self.epy_block_0.offset = (self.msoffset*1E-3)*self.slope
         self.epy_block_0.slope = self.slope
 
     def get_iono_window(self):
@@ -145,7 +154,7 @@ class timertrigger(gr.top_block):
 def argument_parser():
     parser = ArgumentParser()
     parser.add_argument(
-        "-D", "--decimation", dest="decimation", type=intx, default=5000,
+        "-D", "--decimation", dest="decimation", type=intx, default=9000,
         help="Set Decimation [default=%(default)r]")
     parser.add_argument(
         "-C", "--fc", dest="fc", type=eng_float, default=eng_notation.num_to_str(float(14.25E6)),
@@ -163,6 +172,9 @@ def argument_parser():
         "-M", "--minute", dest="minute", type=intx, default=0,
         help="Set Minute for trigger [default=%(default)r]")
     parser.add_argument(
+        "-O", "--msoffset", dest="msoffset", type=eng_float, default=eng_notation.num_to_str(float(0)),
+        help="Set ms offset [default=%(default)r]")
+    parser.add_argument(
         "-S", "--second", dest="second", type=intx, default=0,
         help="Set Second for trigger [default=%(default)r]")
     parser.add_argument(
@@ -174,7 +186,7 @@ def argument_parser():
 def main(top_block_cls=timertrigger, options=None):
     if options is None:
         options = argument_parser().parse_args()
-    tb = top_block_cls(decimation=options.decimation, fc=options.fc, fs=options.fs, hour=options.hour, iono_per=options.iono_per, minute=options.minute, second=options.second, slope=options.slope)
+    tb = top_block_cls(decimation=options.decimation, fc=options.fc, fs=options.fs, hour=options.hour, iono_per=options.iono_per, minute=options.minute, msoffset=options.msoffset, second=options.second, slope=options.slope)
 
     def sig_handler(sig=None, frame=None):
         tb.stop()

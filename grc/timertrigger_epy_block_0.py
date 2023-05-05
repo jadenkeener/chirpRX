@@ -35,6 +35,7 @@ class blk(gr.basic_block):
         samp_rate=12.5E6, 
         slope = 100E3, 
         decimation=5e3, 
+        offset=0,
         fc=14.25E6):  
     
         gr.basic_block.__init__(
@@ -54,6 +55,7 @@ class blk(gr.basic_block):
         self.slope = slope
         self.decimation = decimation
         self.fc = fc
+        self.offset = offset
 
         """ Calculate inital timer start time
         This is the first time the timer will trigger.  We must convert
@@ -102,18 +104,24 @@ class blk(gr.basic_block):
             if time.time() >= self.startTime + self.capture_window:
                 self.writing = False
                 self.file.close()
-                self.startTime = time.time() + self.iono_per*60-self.capture_window
-                print("Stop Writing, Running LocalChirp")
+                self.startTime = (
+                                    time.time() 
+                                    + self.iono_per*60
+                                    -self.capture_window
+                                )
+                print("Stop Writing, Running LocalChirp at "
+                      +time.strftime("%H:%M:%S"))
                 os.system("python3 LocalChirp.py"
                           +" -P "+str(self.filename)
                           +" -W "+str(self.capture_window)
                           +" -D "+str(self.decimation)
                           +" -M "+str(self.slope)
                           +" -C "+str(self.fc)
+                          +" -O "+str(self.offset)
                           +" -B "+str(self.samp_rate))
         elif time.time() >= self.startTime:
             self.writing = True
-            self.filename = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())
+            self.filename = './RAW/{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())
             print("Writing to "+self.filename)
             self.file = open(self.filename, "ab")
             self.file.write(input_items[0][:])

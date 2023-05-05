@@ -28,7 +28,7 @@ options:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [16, 16.0]
+    coordinate: [664, 76.0]
     rotation: 0
     state: enabled
 
@@ -37,55 +37,14 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: fs/slope + 30
+    value: (fs/slope)*1.5
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1616, 548.0]
+    coordinate: [1664, 724.0]
     rotation: 0
     state: true
-- name: analog_sig_source_x_0
-  id: analog_sig_source_x
-  parameters:
-    affinity: ''
-    alias: ''
-    amp: '1'
-    comment: ''
-    freq: 500e3
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    offset: '0'
-    phase: '0'
-    samp_rate: fs
-    type: complex
-    waveform: analog.GR_COS_WAVE
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [128, 328.0]
-    rotation: 0
-    state: disabled
-- name: blocks_throttle_0_0
-  id: blocks_throttle
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    ignoretag: 'True'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samples_per_second: fs
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [488, 380.0]
-    rotation: 0
-    state: disabled
 - name: decimation
   id: parameter
   parameters:
@@ -95,7 +54,7 @@ blocks:
     label: Decimation
     short_id: D
     type: intx
-    value: '5000'
+    value: '9000'
   states:
     bus_sink: false
     bus_source: false
@@ -118,49 +77,53 @@ blocks:
       \"\"\"\nclass blk(gr.basic_block):  \n    \n    def __init__(\n        self,\
       \ \n        hour=0, \n        min=0, \n        sec=0, \n        capture_window\
       \ = 10, \n        ionosonde_period = 12, \n        samp_rate=12.5E6, \n    \
-      \    slope = 100E3, \n        decimation=5e3, \n        fc=14.25E6):  \n   \
-      \ \n        gr.basic_block.__init__(\n            self,\n            name='Timer\
-      \ Trigger 1.1',  \n            in_sig=[np.complex64],\n            out_sig=None\n\
-      \        )\n        \n        \"\"\" Add parameters to class instance \"\"\"\
-      \n        self.hour = hour\n        self.min = min\n        self.sec = sec\n\
-      \        self.capture_window = capture_window\n        self.iono_per = ionosonde_period\n\
-      \        self.samp_rate = samp_rate\n        self.slope = slope\n        self.decimation\
-      \ = decimation\n        self.fc = fc\n\n        \"\"\" Calculate inital timer\
-      \ start time\n        This is the first time the timer will trigger.  We must\
-      \ convert\n        the HH:MM:SS user input to the correct unix time.  Assumes\
-      \ that the\n        time given is today.\n        \n        If the time given\
-      \ is in the past, forward calculate to the next future\n        time based on\
-      \ the given period.\n        \"\"\"\n        timeTuple = time.localtime()\n\
-      \        timeList = list(timeTuple)\n        timeList[3] = self.hour\n     \
-      \   timeList[4] = self.min\n        timeList[5] = self.sec\n        timeTuple\
-      \ = tuple(timeList)\n        self.startTime = time.mktime(timeTuple)\n     \
-      \   \n        # Make sure we are in the present\n        while self.startTime\
-      \ <= time.time():\n            self.startTime = self.startTime + self.iono_per*60\n\
-      \        \n        # Set a writing flag\n        self.writing = False\n    \
-      \    \n    \n    \"\"\" work function\n    Standard declaration for gnu radio\
-      \ work function.  This is the function\n    that is called whenever gnu radio\
-      \ has samples for this block to process.  \n    \n    This function is not called\
-      \ for every sample individually, but is instead\n    fed large batches of samples\
-      \ at once.\n    \"\"\"\n    def general_work(self, input_items, output_items):\n\
-      \    \n        \"\"\" Wait and write\n        This if/elif statement controls\
-      \ the timer and data capture. \n        If the writing flag is true, then we\
-      \ write whatever samples we have \n        gathered to disk and check if time\
-      \ is up. If time is up, then close the\n        file and call LocalChirp.py\n\
-      \        \n        If the writing flag isnt active, we check to see if we the\
-      \ timer has\n        'gone off' and we should set it to true.\n        \"\"\"\
-      \n        if self.writing:\n            self.file.write(input_items[0][:])\n\
-      \            if time.time() >= self.startTime + self.capture_window:\n     \
-      \           self.writing = False\n                self.file.close()\n      \
-      \          self.startTime = time.time() + self.iono_per*60-self.capture_window\n\
-      \                print(\"Stop Writing, Running LocalChirp\")\n             \
-      \   os.system(\"python3 LocalChirp.py\"\n                          +\" -P \"\
-      +str(self.filename)\n                          +\" -W \"+str(self.capture_window)\n\
-      \                          +\" -D \"+str(self.decimation)\n                \
-      \          +\" -M \"+str(self.slope)\n                          +\" -C \"+str(self.fc)\n\
-      \                          +\" -B \"+str(self.samp_rate))\n        elif time.time()\
-      \ >= self.startTime:\n            self.writing = True\n            self.filename\
-      \ = '{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n      \
-      \      print(\"Writing to \"+self.filename)\n            self.file = open(self.filename,\
+      \    slope = 100E3, \n        decimation=5e3, \n        offset=0,\n        fc=14.25E6):\
+      \  \n    \n        gr.basic_block.__init__(\n            self,\n           \
+      \ name='Timer Trigger 1.1',  \n            in_sig=[np.complex64],\n        \
+      \    out_sig=None\n        )\n        \n        \"\"\" Add parameters to class\
+      \ instance \"\"\"\n        self.hour = hour\n        self.min = min\n      \
+      \  self.sec = sec\n        self.capture_window = capture_window\n        self.iono_per\
+      \ = ionosonde_period\n        self.samp_rate = samp_rate\n        self.slope\
+      \ = slope\n        self.decimation = decimation\n        self.fc = fc\n    \
+      \    self.offset = offset\n\n        \"\"\" Calculate inital timer start time\n\
+      \        This is the first time the timer will trigger.  We must convert\n \
+      \       the HH:MM:SS user input to the correct unix time.  Assumes that the\n\
+      \        time given is today.\n        \n        If the time given is in the\
+      \ past, forward calculate to the next future\n        time based on the given\
+      \ period.\n        \"\"\"\n        timeTuple = time.localtime()\n        timeList\
+      \ = list(timeTuple)\n        timeList[3] = self.hour\n        timeList[4] =\
+      \ self.min\n        timeList[5] = self.sec\n        timeTuple = tuple(timeList)\n\
+      \        self.startTime = time.mktime(timeTuple)\n        \n        # Make sure\
+      \ we are in the present\n        while self.startTime <= time.time():\n    \
+      \        self.startTime = self.startTime + self.iono_per*60\n        \n    \
+      \    # Set a writing flag\n        self.writing = False\n        \n    \n  \
+      \  \"\"\" work function\n    Standard declaration for gnu radio work function.\
+      \  This is the function\n    that is called whenever gnu radio has samples for\
+      \ this block to process.  \n    \n    This function is not called for every\
+      \ sample individually, but is instead\n    fed large batches of samples at once.\n\
+      \    \"\"\"\n    def general_work(self, input_items, output_items):\n    \n\
+      \        \"\"\" Wait and write\n        This if/elif statement controls the\
+      \ timer and data capture. \n        If the writing flag is true, then we write\
+      \ whatever samples we have \n        gathered to disk and check if time is up.\
+      \ If time is up, then close the\n        file and call LocalChirp.py\n     \
+      \   \n        If the writing flag isnt active, we check to see if we the timer\
+      \ has\n        'gone off' and we should set it to true.\n        \"\"\"\n  \
+      \      if self.writing:\n            self.file.write(input_items[0][:])\n  \
+      \          if time.time() >= self.startTime + self.capture_window:\n       \
+      \         self.writing = False\n                self.file.close()\n        \
+      \        self.startTime = (\n                                    time.time()\
+      \ \n                                    + self.iono_per*60\n               \
+      \                     -self.capture_window\n                               \
+      \ )\n                print(\"Stop Writing, Running LocalChirp at \"\n      \
+      \                +time.strftime(\"%H:%M:%S\"))\n                os.system(\"\
+      python3 LocalChirp.py\"\n                          +\" -P \"+str(self.filename)\n\
+      \                          +\" -W \"+str(self.capture_window)\n            \
+      \              +\" -D \"+str(self.decimation)\n                          +\"\
+      \ -M \"+str(self.slope)\n                          +\" -C \"+str(self.fc)\n\
+      \                          +\" -O \"+str(self.offset)\n                    \
+      \      +\" -B \"+str(self.samp_rate))\n        elif time.time() >= self.startTime:\n\
+      \            self.writing = True\n            self.filename = './RAW/{date:%Y%m%d_%H%M%S}.RAW'.format(date=datetime.datetime.now())\n\
+      \            print(\"Writing to \"+self.filename)\n            self.file = open(self.filename,\
       \ \"ab\")\n            self.file.write(input_items[0][:])\n        \n      \
       \  \n        self.consume(0, len(input_items[0]))  # GNU radio boilerplate\n\
       \        return 0                              # GNU radio boilerplate\n\n"
@@ -175,77 +138,22 @@ blocks:
     maxoutbuf: '0'
     min: minute
     minoutbuf: '0'
+    offset: (msoffset*1E-3)*slope
     samp_rate: fs
     sec: second
     slope: slope
   states:
     _io_cache: ('Timer Trigger 1.1', 'blk', [('hour', '0'), ('min', '0'), ('sec',
       '0'), ('capture_window', '10'), ('ionosonde_period', '12'), ('samp_rate', '12500000.0'),
-      ('slope', '100000.0'), ('decimation', '5000.0'), ('fc', '14250000.0')], [('0',
-      'complex', 1)], [], '', ['capture_window', 'decimation', 'fc', 'hour', 'min',
-      'samp_rate', 'sec', 'slope'])
+      ('slope', '100000.0'), ('decimation', '5000.0'), ('offset', '0'), ('fc', '14250000.0')],
+      [('0', 'complex', 1)], [], '', ['capture_window', 'decimation', 'fc', 'hour',
+      'min', 'offset', 'samp_rate', 'sec', 'slope'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2056, 1076.0]
+    coordinate: [1632, 472.0]
     rotation: 0
     state: true
-- name: epy_block_1
-  id: epy_block
-  parameters:
-    _source_code: "\"\"\"\nLocal Chirp\nBy Jaden Keener, Last updated 3/27/23\n\n\
-      Generates a local tone that sweeps the spectrum at the specified slope\n\n\"\
-      \"\"\n\nimport numpy as np\nimport pmt\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):\
-      \  \n\n    def __init__(self, slope=100e3, samp_rate=200e6/12, offset = 10e3):\n\
-      \        gr.sync_block.__init__(\n            self,\n            name='Local\
-      \ Chirp Test 1.0',   \n            in_sig=[np.complex64],\n            out_sig=[np.complex64]\n\
-      \        )\n\n        self.slope = slope  \n        self.fs = samp_rate\n  \
-      \      self.offset = offset\n        self.debug = False\n        \n        self.lastT\
-      \ = 0\n        self.lastF = -self.fs/2 + self.offset\n        self.spanF = self.lastF\
-      \ + self.fs/2 - self.offset\n        self.dt = 1/self.fs\n        self.df =\
-      \ self.slope/self.fs/2 #why /2 ?? I have no idea, but it has to be\n       \
-      \ # over 2 has something to do with span of f not being -fs/2 to fs/2 but\n\
-      \        # just fs..???\n        \n        \n        self.controlPortName =\
-      \ 'controlIn'\n        self.message_port_register_in(pmt.intern(self.controlPortName))\n\
-      \        self.set_msg_handler(pmt.intern(self.controlPortName), self.handle_msg)\n\
-      \        self.control = False\n        \n            \n        \n    def handle_msg(self,\
-      \ msg):\n        controlIn = pmt.to_bool(msg)\n        \n        if controlIn\
-      \ > self.controlLast+self.trigger_Power:\n            self.control = True\n\
-      \        \n        self.controlLast = controlIn\n        \n    def work(self,\
-      \ input_items, output_items):\n    \n        # Find number of samples on this\
-      \ call\n        n = len(input_items[0]) \n\n        # If we havent progged the\
-      \ whole spectrum\n        if self.lastF <= self.offset/2: # WHY OFFSET/2 ???????????\
-      \ IDK\n        \n            # Calculate the values of T and F we prog to on\
-      \ this call\n            newT = self.dt*n + self.lastT\n            newF = self.df*n\
-      \ + self.lastF\n            \n            # Make sure arrays are correct size.\
-      \ Can get slightly offsize due\n            # to float precision errors\n  \
-      \          t = np.resize(np.arange(self.lastT, newT, self.dt), n)\n        \
-      \    f = np.resize(np.arange(self.lastF, newF, self.df), n)\n            \n\
-      \            # Output is a complex exponential (I/Q)\n            output_items[0][:]\
-      \ = np.exp(1j*2*np.pi*f*t)\n            \n            # Update bookmarks\n \
-      \           self.lastT = newT\n            self.lastF = newF\n        \n   \
-      \     # Otherwise do nothing\n        else:\n            output_items[0][:]\
-      \ = input_items[0] * 0;\n            if self.debug:\n                self.debug\
-      \ = False\n                raise ValueError(self.lastF)\n            \n    \
-      \    \n        return len(output_items[0])\n"
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    offset: '0'
-    samp_rate: fs
-    slope: 100e3
-  states:
-    _io_cache: ('Local Chirp Test 1.0', 'blk', [('slope', '100000.0'), ('samp_rate',
-      '16666666.666666666'), ('offset', '10000.0')], [('0', 'complex', 1), ('controlIn',
-      'message', 1)], [('0', 'complex', 1)], '', ['offset', 'slope'])
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [840, 928.0]
-    rotation: 0
-    state: disabled
 - name: fc
   id: parameter
   parameters:
@@ -263,23 +171,6 @@ blocks:
     coordinate: [1088, 276.0]
     rotation: 0
     state: true
-- name: freq_offset
-  id: parameter
-  parameters:
-    alias: ''
-    comment: ''
-    hide: none
-    label: Frequency Offset
-    short_id: O
-    type: eng_float
-    value: '0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1904, 76.0]
-    rotation: 0
-    state: disabled
 - name: fs
   id: parameter
   parameters:
@@ -348,6 +239,23 @@ blocks:
     coordinate: [1200, 76.0]
     rotation: 0
     state: true
+- name: msoffset
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ms offset
+    short_id: O
+    type: eng_float
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1904, 76.0]
+    rotation: 0
+    state: enabled
 - name: second
   id: parameter
   parameters:
@@ -815,15 +723,11 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1384, 744.0]
+    coordinate: [1200, 504.0]
     rotation: 0
     state: enabled
 
 connections:
-- [analog_sig_source_x_0, '0', blocks_throttle_0_0, '0']
-- [blocks_throttle_0_0, '0', epy_block_1, '0']
-- [blocks_throttle_0_0, '0', uhd_usrp_source_0, command]
-- [epy_block_1, '0', epy_block_0, '0']
 - [uhd_usrp_source_0, '0', epy_block_0, '0']
 
 metadata:

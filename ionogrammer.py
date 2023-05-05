@@ -24,6 +24,7 @@ parser.add_argument("-p", "--path", help = "Path to .chirp file", type=str)
 parser.add_argument("-B", "--fs", type=float)
 parser.add_argument("-P", "--slope", type=float)
 parser.add_argument("-C", "--fc", type=float)
+parser.add_argument("-O", "--msoffset", type=float)
 args = parser.parse_args()
 
 # Place args in easier to use vars
@@ -32,7 +33,7 @@ fc = args.fc
 fs = args.fs
 fft_size = 512
 ionosonde_slope = args.slope
-offset = 0
+offset = args.msoffset
 filename = args.path
 ypoints = 5
 xpoints = 5
@@ -73,5 +74,5 @@ plt.title(filename+" Ionogram")
 Save newly generated Ionogram and delte the original .RAW file to save 
 disk space. We keep the .chirp since it is size efficient and useful.
 """
-plt.savefig(filename.split(".")[0] + ".png")
-os.remove(filename.split(".")[0] + ".RAW")
+plt.savefig( "./png/" + (filename.split(".")[1]).split("/")[2] + ".png")
+os.remove( "./RAW/" + (filename.split(".")[1]).split("/")[2] + ".RAW")

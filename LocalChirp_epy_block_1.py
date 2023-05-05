@@ -113,6 +113,7 @@ class blk(gr.sync_block):
                           +" -P "+str(self.slope)
                           +" -B "+str(self.fs)
                           +" -C "+str(self.fc)
+                          +" -O "+str(self.offset)
                           +" -d "+str(self.decimation))
                 self.over = False
             
