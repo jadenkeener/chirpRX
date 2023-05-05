@@ -1,0 +1,437 @@
+options:
+  parameters:
+    author: Jaden Keener
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: no_gui
+    hier_block_src_path: '.:'
+    id: LocalChirp
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: run
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: localChirp
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 44.0]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: fftsz
+  id: variable
+  parameters:
+    comment: ''
+    value: '4096'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1400, 76.0]
+    rotation: 0
+    state: enabled
+- name: filt_cutoff
+  id: variable
+  parameters:
+    comment: ''
+    value: samp_rate/decimation*0.8
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [784, 852.0]
+    rotation: 0
+    state: enabled
+- name: filt_transwidth
+  id: variable
+  parameters:
+    comment: ''
+    value: (samp_rate/decimation - filt_cutoff) *2
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [944, 852.0]
+    rotation: 0
+    state: enabled
+- name: outfile
+  id: variable
+  parameters:
+    comment: ''
+    value: '"./chirp/"+(path.split(".")[1]).split("/")[2]+".chirp"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1176, 796.0]
+    rotation: 0
+    state: enabled
+- name: blocks_file_sink_0
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: outfile
+    type: complex
+    unbuffered: 'False'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1184, 688.0]
+    rotation: 0
+    state: true
+- name: blocks_file_source_0
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: ''
+    file: path
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [176, 468.0]
+    rotation: 0
+    state: true
+- name: blocks_head_0
+  id: blocks_head
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: int(samp_rate*length)
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 508.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_conjugate_cc_0
+  id: blocks_multiply_conjugate_cc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1312, 492.0]
+    rotation: 0
+    state: enabled
+- name: blocks_throttle_0
+  id: blocks_throttle
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ignoretag: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: samp_rate
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [416, 508.0]
+    rotation: 0
+    state: true
+- name: decimation
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Decimation
+    short_id: D
+    type: intx
+    value: '9000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1008, 44.0]
+    rotation: 0
+    state: true
+- name: epy_block_1
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\" LocalChirp_epy_block_1.py\nLast Edited 5/4/24\nBy Jaden\
+      \ Keener and the NMT Dev Team\n\nSecond custom block of the ChirpRX DSP chain.\
+      \  \nGenerates a local tone that sweeps the spectrum at the specified slope.\
+      \ \nThis tone gets mixed with ionosnde signal in the greater grc flowchart such\n\
+      that we create a plottable frequency difference term.\n\nCalls ionogrammer.py\
+      \ after processing is complete.\n\"\"\"\n\n# Imports\nimport numpy as np\nimport\
+      \ pmt\nfrom gnuradio import gr\nimport os\nimport time\n\n\n\"\"\" blk definition\n\
+      This is the standard block class declaration for use in gnu radio. \nThis file\
+      \ is one custom block in the larger LocalChirp.py flowchart\n\nSee gnu radio\
+      \ 'custom py block' documentation for further explanation.\n\"\"\"\nclass blk(gr.sync_block):\
+      \  \n\n    def __init__(\n        self, \n        slope=100e3, \n        samp_rate=200e6/12,\
+      \ \n        offset = 10e3, \n        filename=None, \n        decimation=100,\
+      \ \n        fc = 14.25E6):\n        \n        gr.sync_block.__init__(\n    \
+      \        self,\n            name='Local Chirp 1.6',   \n            in_sig=[np.complex64],\n\
+      \            out_sig=[np.complex64]\n        )\n\n        \"\"\" Add parameters\
+      \ to class instance \"\"\"\n        self.slope = slope  \n        self.fs =\
+      \ samp_rate\n        self.fc = fc\n        self.offset = offset\n        self.filename\
+      \ = filename\n        self.decimation = decimation\n        self.over = True\n\
+      \        \n        \"\"\" Initialize vars\n        Calculate and initialize\
+      \ some important vars. These are:\n        Last Time\n        Last Frequency\n\
+      \        Frequency Span\n        Time Step\n        Frequency Step\n       \
+      \ \"\"\"\n        self.lastT = 0\n        self.lastF = -self.fs/2 + self.offset\n\
+      \        self.spanF = self.lastF + self.fs/2 - self.offset\n        self.dt\
+      \ = 1/self.fs\n        self.df = self.slope/self.fs/2 \n        \n        \n\
+      \    \"\"\" work function\n    Standard declaration for gnu radio work function.\
+      \  This is the function\n    that is called whenever gnu radio has samples for\
+      \ this block to process.  \n    \n    This function is not called for every\
+      \ sample individually, but is instead\n    fed large batches of samples at once.\n\
+      \    \"\"\"\n    def work(self, input_items, output_items):\n    \n        #\
+      \ Find number of samples on this call\n        n = len(input_items[0]) \n\n\
+      \        \"\"\" Generate LO\n        This if/else statement generates the corresponding\
+      \ LO value for \n        every sample fed into this block. \n        \n    \
+      \    We first check to see if we have swept the entire f spectrum, if not,\n\
+      \        then generate. If we have, then this block is over and we can call\n\
+      \        ionogrammer.\n        \"\"\"\n        if self.lastF <= self.offset/2:\
+      \ \n        \n            # Calculate the values of T and F we prog to on this\
+      \ call\n            newT = self.dt*n + self.lastT\n            newF = self.df*n\
+      \ + self.lastF\n            \n            # Make sure arrays are correct size.\
+      \ Can get slightly offsize due\n            # to float precision errors\n  \
+      \          t = np.resize(np.arange(self.lastT, newT, self.dt), n)\n        \
+      \    f = np.resize(np.arange(self.lastF, newF, self.df), n)\n            \n\
+      \            # Output is a complex exponential (I/Q)\n            output_items[0][:]\
+      \ = np.exp(1j*2*np.pi*f*t)\n            \n            # Update bookmarks\n \
+      \           self.lastT = newT\n            self.lastF = newF\n        else:\n\
+      \            \n            output_items[0][:] = input_items[0] * 0;\n      \
+      \      if self.over:\n                print(\"Locally Chirped at \"+time.strftime(\"\
+      %H:%M:%S\"))\n                os.system(\"python3 ionogrammer.py\"\n       \
+      \                   +\" -p \"+str(self.filename)\n                         \
+      \ +\" -P \"+str(self.slope)\n                          +\" -B \"+str(self.fs)\n\
+      \                          +\" -C \"+str(self.fc)\n                        \
+      \  +\" -O \"+str(self.offset)\n                          +\" -d \"+str(self.decimation))\n\
+      \                self.over = False\n            \n        return len(output_items[0])\
+      \ # GNU radio boilerplate\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    decimation: decimation
+    fc: fc
+    filename: outfile
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: msoffset
+    samp_rate: samp_rate
+    slope: slope
+  states:
+    _io_cache: ('Local Chirp 1.6', 'blk', [('slope', '100000.0'), ('samp_rate', '16666666.666666666'),
+      ('offset', '10000.0'), ('filename', 'None'), ('decimation', '100'), ('fc', '14250000.0')],
+      [('0', 'complex', 1)], [('0', 'complex', 1)], '', ['decimation', 'fc', 'filename',
+      'offset', 'slope'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [968, 352.0]
+    rotation: 0
+    state: enabled
+- name: fc
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: fc
+    short_id: C
+    type: eng_float
+    value: 14.25E6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [960, 196.0]
+    rotation: 0
+    state: true
+- name: filter_fft_low_pass_filter_0
+  id: filter_fft_low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: filt_cutoff
+    decim: decimation
+    gain: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nthreads: '8'
+    samp_rate: samp_rate
+    type: ccc
+    width: filt_transwidth
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [824, 636.0]
+    rotation: 0
+    state: enabled
+- name: length
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Capture Length (s)
+    short_id: W
+    type: eng_float
+    value: '150'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [768, 44.0]
+    rotation: 0
+    state: true
+- name: msoffset
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ms offset
+    short_id: O
+    type: eng_float
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1104, 196.0]
+    rotation: 0
+    state: true
+- name: path
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: File Path
+    short_id: P
+    type: str
+    value: '''./RAW/None.RAW'''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [560, 44.0]
+    rotation: 0
+    state: true
+- name: samp_rate
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Sample Rate
+    short_id: B
+    type: eng_float
+    value: 12.5e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1192, 44.0]
+    rotation: 0
+    state: true
+- name: slope
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Ionosodne Slope
+    short_id: M
+    type: eng_float
+    value: 100E3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [736, 196.0]
+    rotation: 0
+    state: true
+- name: virtual_sink_0
+  id: virtual_sink
+  parameters:
+    alias: ''
+    comment: ''
+    stream_id: diff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1624, 492.0]
+    rotation: 0
+    state: true
+- name: virtual_source_0
+  id: virtual_source
+  parameters:
+    alias: ''
+    comment: ''
+    stream_id: diff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [512, 708.0]
+    rotation: 0
+    state: true
+
+connections:
+- [blocks_file_source_0, '0', blocks_throttle_0, '0']
+- [blocks_head_0, '0', blocks_multiply_conjugate_cc_0, '1']
+- [blocks_head_0, '0', epy_block_1, '0']
+- [blocks_multiply_conjugate_cc_0, '0', virtual_sink_0, '0']
+- [blocks_throttle_0, '0', blocks_head_0, '0']
+- [epy_block_1, '0', blocks_multiply_conjugate_cc_0, '0']
+- [filter_fft_low_pass_filter_0, '0', blocks_file_sink_0, '0']
+- [virtual_source_0, '0', filter_fft_low_pass_filter_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.5.0
